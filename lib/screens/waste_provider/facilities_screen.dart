@@ -117,6 +117,9 @@ class _FacilitiesScreenState extends State<FacilitiesScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final languageProvider = Provider.of<LanguageProvider>(context);
+    
     return Scaffold(
       body: Container(
         decoration: const BoxDecoration(
@@ -133,12 +136,21 @@ class _FacilitiesScreenState extends State<FacilitiesScreen> {
           child: Column(
             children: [
               // Header
-              Padding(
-                padding: const EdgeInsets.all(24),
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(20),
                 child: Column(
                   children: [
                     Row(
                       children: [
+                        IconButton(
+                          onPressed: () => Navigator.of(context).pop(),
+                          icon: const Icon(
+                            Icons.arrow_back,
+                            color: Colors.white,
+                          ),
+                        ),
+                        const SizedBox(width: 8),
                         Container(
                           padding: const EdgeInsets.all(12),
                           decoration: BoxDecoration(
@@ -152,11 +164,11 @@ class _FacilitiesScreenState extends State<FacilitiesScreen> {
                           ),
                         ),
                         const SizedBox(width: 16),
-                        const Expanded(
+                        Expanded(
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text(
+                              TranslatedText(
                                 'Waste Management Facilities',
                                 style: TextStyle(
                                   color: Colors.white,
@@ -164,7 +176,7 @@ class _FacilitiesScreenState extends State<FacilitiesScreen> {
                                   fontWeight: FontWeight.bold,
                                 ),
                               ),
-                              Text(
+                              TranslatedText(
                                 'Find nearby treatment centers',
                                 style: TextStyle(
                                   color: Colors.white70,
@@ -174,6 +186,11 @@ class _FacilitiesScreenState extends State<FacilitiesScreen> {
                             ],
                           ),
                         ),
+                        LanguageSelector(
+                          iconColor: Colors.white,
+                          backgroundColor: theme.cardColor,
+                        ),
+                        const SizedBox(width: 8),
                         IconButton(
                           onPressed: () => setState(() => _showMap = !_showMap),
                           icon: Icon(
@@ -188,17 +205,23 @@ class _FacilitiesScreenState extends State<FacilitiesScreen> {
                     
                     // Search Bar
                     Container(
+                      width: double.infinity,
                       decoration: BoxDecoration(
-                        color: Colors.white,
+                        color: theme.cardColor,
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: TextField(
                         onChanged: (value) => setState(() => _searchQuery = value),
-                        decoration: const InputDecoration(
-                          hintText: 'Search facilities...',
-                          prefixIcon: Icon(Icons.search),
+                        style: TextStyle(color: theme.textTheme.bodyLarge?.color),
+                        decoration: InputDecoration(
+                          hintText: languageProvider.translate('Search facilities...'),
+                          prefixIcon: Icon(
+                            Icons.search,
+                            color: theme.iconTheme.color,
+                          ),
                           border: InputBorder.none,
                           contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                          hintStyle: TextStyle(color: theme.textTheme.bodyMedium?.color?.withOpacity(0.6)),
                         ),
                       ),
                     ),
@@ -209,14 +232,14 @@ class _FacilitiesScreenState extends State<FacilitiesScreen> {
               // Filter Chips
               Container(
                 height: 50,
-                padding: const EdgeInsets.symmetric(horizontal: 24),
+                padding: const EdgeInsets.symmetric(horizontal: 20),
                 child: ListView(
                   scrollDirection: Axis.horizontal,
                   children: [
-                    _buildFilterChip('All', null),
+                    _buildFilterChip(languageProvider.translate('All'), null),
                     ..._facilityTypeData.entries.map((entry) {
                       return _buildFilterChip(
-                        entry.value['label'],
+                        languageProvider.translate(entry.value['label']),
                         entry.key,
                       );
                     }).toList(),
@@ -227,8 +250,9 @@ class _FacilitiesScreenState extends State<FacilitiesScreen> {
               // Content
               Expanded(
                 child: Container(
+                  width: double.infinity,
                   decoration: const BoxDecoration(
-                    color: Colors.white,
+                    color: theme.scaffoldBackgroundColor,
                     borderRadius: BorderRadius.only(
                       topLeft: Radius.circular(30),
                       topRight: Radius.circular(30),
@@ -245,14 +269,16 @@ class _FacilitiesScreenState extends State<FacilitiesScreen> {
   }
 
   Widget _buildFilterChip(String label, FacilityType? type) {
+    final theme = Theme.of(context);
     final isSelected = _selectedType == type;
+    
     return Container(
       margin: const EdgeInsets.only(right: 8),
       child: FilterChip(
         label: Text(
           label,
           style: TextStyle(
-            color: isSelected ? Colors.white : Colors.grey[700],
+            color: isSelected ? Colors.white : theme.textTheme.bodyMedium?.color,
             fontWeight: FontWeight.w500,
           ),
         ),
@@ -262,7 +288,7 @@ class _FacilitiesScreenState extends State<FacilitiesScreen> {
             _selectedType = selected ? type : null;
           });
         },
-        backgroundColor: Colors.white.withOpacity(0.2),
+        backgroundColor: theme.cardColor.withOpacity(0.7),
         selectedColor: Colors.white.withOpacity(0.3),
         checkmarkColor: Colors.white,
       ),
@@ -291,6 +317,9 @@ class _FacilitiesScreenState extends State<FacilitiesScreen> {
   }
 
   Widget _buildListView() {
+    final theme = Theme.of(context);
+    final languageProvider = Provider.of<LanguageProvider>(context);
+    
     return Consumer<WasteProvider>(
       builder: (context, wasteProvider, child) {
         var facilities = wasteProvider.facilities;
@@ -311,7 +340,39 @@ class _FacilitiesScreenState extends State<FacilitiesScreen> {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(
+                TranslatedText(
+                  'No facilities found',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                SizedBox(height: 8),
+                TranslatedText(
+                  'Try adjusting your search or filters',
+                  style: TextStyle(
+                    fontSize: 14,
+                  ),
+                ),
+              ],
+            ),
+          );
+        }
+
+        return ListView.builder(
+          padding: const EdgeInsets.all(20),
+          itemCount: facilities.length,
+          itemBuilder: (context, index) {
+            final facility = facilities[index];
+            return Container(
+              margin: const EdgeInsets.only(bottom: 16),
+              child: _buildFacilityCard(facility),
+            );
+          },
+        );
+      },
+    );
+  }
                   Icons.location_off,
                   size: 64,
                   color: Colors.grey,
@@ -353,13 +414,17 @@ class _FacilitiesScreenState extends State<FacilitiesScreen> {
   }
 
   Widget _buildFacilityCard(FacilityModel facility) {
+    final theme = Theme.of(context);
+    final languageProvider = Provider.of<LanguageProvider>(context);
     final typeData = _facilityTypeData[facility.type]!;
     
     return Container(
+      width: double.infinity,
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: theme.cardColor,
         borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: theme.dividerColor),
         boxShadow: [
           BoxShadow(
             color: Colors.grey.withOpacity(0.1),
@@ -393,14 +458,15 @@ class _FacilitiesScreenState extends State<FacilitiesScreen> {
                   children: [
                     Text(
                       facility.name,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontWeight: FontWeight.bold,
                         fontSize: 16,
+                        color: theme.textTheme.titleMedium?.color,
                       ),
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      typeData['label'],
+                      languageProvider.translate(typeData['label']),
                       style: TextStyle(
                         color: typeData['color'],
                         fontSize: 12,
@@ -447,7 +513,7 @@ class _FacilitiesScreenState extends State<FacilitiesScreen> {
                 child: Text(
                   facility.address,
                   style: TextStyle(
-                    color: Colors.grey[600],
+                    color: theme.textTheme.bodySmall?.color,
                     fontSize: 14,
                   ),
                 ),
@@ -462,13 +528,13 @@ class _FacilitiesScreenState extends State<FacilitiesScreen> {
               Icon(
                 Icons.business,
                 size: 16,
-                color: Colors.grey[600],
+                color: theme.iconTheme.color,
               ),
               const SizedBox(width: 8),
               Text(
-                'Capacity: ${facility.capacity}',
+                '${languageProvider.translate('Capacity')}: ${facility.capacity}',
                 style: TextStyle(
-                  color: Colors.grey[600],
+                  color: theme.textTheme.bodySmall?.color,
                   fontSize: 14,
                 ),
               ),
@@ -484,7 +550,7 @@ class _FacilitiesScreenState extends State<FacilitiesScreen> {
                   Text(
                     facility.rating.toStringAsFixed(1),
                     style: TextStyle(
-                      color: Colors.grey[700],
+                      color: theme.textTheme.bodyMedium?.color,
                       fontWeight: FontWeight.w600,
                       fontSize: 14,
                     ),
@@ -503,8 +569,13 @@ class _FacilitiesScreenState extends State<FacilitiesScreen> {
                 child: OutlinedButton.icon(
                   onPressed: () => _callFacility(facility.contact),
                   icon: const Icon(Icons.phone, size: 16),
-                  label: const Text('Call'),
+                  label: TranslatedText(
+                    'Call',
+                    style: TextStyle(color: theme.primaryColor),
+                  ),
                   style: OutlinedButton.styleFrom(
+                    foregroundColor: theme.primaryColor,
+                    side: BorderSide(color: theme.primaryColor),
                     padding: const EdgeInsets.symmetric(vertical: 8),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(8),
@@ -517,8 +588,13 @@ class _FacilitiesScreenState extends State<FacilitiesScreen> {
                 child: ElevatedButton.icon(
                   onPressed: () => _getDirections(facility),
                   icon: const Icon(Icons.directions, size: 16),
-                  label: const Text('Directions'),
+                  label: const TranslatedText(
+                    'Directions',
+                    style: TextStyle(color: Colors.white),
+                  ),
                   style: ElevatedButton.styleFrom(
+                    backgroundColor: theme.primaryColor,
+                    foregroundColor: Colors.white,
                     padding: const EdgeInsets.symmetric(vertical: 8),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(8),
@@ -534,16 +610,24 @@ class _FacilitiesScreenState extends State<FacilitiesScreen> {
   }
 
   void _callFacility(String phoneNumber) {
+    final languageProvider = Provider.of<LanguageProvider>(context, listen: false);
     // Implement phone call functionality
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Calling $phoneNumber...')),
+      SnackBar(
+        content: Text('${languageProvider.translate('Calling')} $phoneNumber...'),
+        backgroundColor: Theme.of(context).primaryColor,
+      ),
     );
   }
 
   void _getDirections(FacilityModel facility) {
+    final languageProvider = Provider.of<LanguageProvider>(context, listen: false);
     // Implement navigation to facility
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Getting directions to ${facility.name}...')),
+      SnackBar(
+        content: Text('${languageProvider.translate('Getting directions to')} ${facility.name}...'),
+        backgroundColor: Theme.of(context).primaryColor,
+      ),
     );
   }
 }

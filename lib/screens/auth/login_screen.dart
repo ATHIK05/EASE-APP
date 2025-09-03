@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../providers/auth_provider.dart';
+import '../../providers/language_provider.dart';
 import '../../models/user_model.dart';
 import '../home/home_screen.dart';
 import 'register_screen.dart';
+import '../../widgets/translated_text.dart';
+import '../../widgets/language_selector.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -77,6 +80,9 @@ class _LoginScreenState extends State<LoginScreen>
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    
     return Scaffold(
       body: Container(
         decoration: const BoxDecoration(
@@ -92,10 +98,23 @@ class _LoginScreenState extends State<LoginScreen>
         ),
         child: SafeArea(
           child: SingleChildScrollView(
-            padding: const EdgeInsets.all(24),
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
             child: Column(
               children: [
-                const SizedBox(height: 60),
+                const SizedBox(height: 40),
+                
+                // Language Selector
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    LanguageSelector(
+                      iconColor: Colors.white,
+                      backgroundColor: theme.cardColor,
+                    ),
+                  ],
+                ),
+                
+                const SizedBox(height: 20),
                 
                 // Logo and Title
                 FadeTransition(
@@ -125,19 +144,20 @@ class _LoginScreenState extends State<LoginScreen>
                           ),
                         ),
                         const SizedBox(height: 24),
-                        Text(
+                        const TranslatedText(
                           'WasteWise India',
-                          style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                          style: TextStyle(
                             color: Colors.white,
                             fontWeight: FontWeight.bold,
                             fontSize: 28,
                           ),
                         ),
                         const SizedBox(height: 8),
-                        Text(
+                        const TranslatedText(
                           'Join the waste management revolution',
-                          style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                          style: TextStyle(
                             color: Colors.white.withOpacity(0.9),
+                            fontSize: 16,
                           ),
                         ),
                       ],
@@ -145,7 +165,7 @@ class _LoginScreenState extends State<LoginScreen>
                   ),
                 ),
                 
-                const SizedBox(height: 60),
+                const SizedBox(height: 40),
                 
                 // Login Form
                 FadeTransition(
@@ -153,9 +173,10 @@ class _LoginScreenState extends State<LoginScreen>
                   child: SlideTransition(
                     position: _slideAnimation,
                     child: Container(
-                      padding: const EdgeInsets.all(24),
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(20),
                       decoration: BoxDecoration(
-                        color: Colors.white,
+                        color: theme.cardColor,
                         borderRadius: BorderRadius.circular(20),
                         boxShadow: [
                           BoxShadow(
@@ -170,19 +191,21 @@ class _LoginScreenState extends State<LoginScreen>
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.stretch,
                           children: [
-                            Text(
+                            TranslatedText(
                               'Welcome Back',
-                              style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                              style: TextStyle(
                                 fontWeight: FontWeight.bold,
-                                color: Colors.grey[800],
+                                fontSize: 24,
+                                color: theme.textTheme.headlineSmall?.color,
                               ),
                               textAlign: TextAlign.center,
                             ),
                             const SizedBox(height: 8),
-                            Text(
+                            TranslatedText(
                               'Sign in to continue your green journey',
-                              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                color: Colors.grey[600],
+                              style: TextStyle(
+                                color: theme.textTheme.bodyMedium?.color?.withOpacity(0.7),
+                                fontSize: 14,
                               ),
                               textAlign: TextAlign.center,
                             ),
@@ -192,13 +215,19 @@ class _LoginScreenState extends State<LoginScreen>
                             TextFormField(
                               controller: _emailController,
                               keyboardType: TextInputType.emailAddress,
-                              decoration: const InputDecoration(
-                                labelText: 'Email Address',
-                                prefixIcon: Icon(Icons.email_outlined),
+                              style: TextStyle(color: theme.textTheme.bodyLarge?.color),
+                              decoration: InputDecoration(
+                                labelText: Provider.of<LanguageProvider>(context).translate('Email Address'),
+                                prefixIcon: Icon(
+                                  Icons.email_outlined,
+                                  color: theme.iconTheme.color,
+                                ),
+                                labelStyle: TextStyle(color: theme.textTheme.bodyMedium?.color),
+                                hintStyle: TextStyle(color: theme.textTheme.bodyMedium?.color?.withOpacity(0.6)),
                               ),
                               validator: (value) {
                                 if (value == null || value.isEmpty) {
-                                  return 'Please enter your email';
+                                  return Provider.of<LanguageProvider>(context, listen: false).translate('Please enter your email');
                                 }
                                 if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(value)) {
                                   return 'Please enter a valid email';
@@ -212,12 +241,19 @@ class _LoginScreenState extends State<LoginScreen>
                             TextFormField(
                               controller: _passwordController,
                               obscureText: _obscurePassword,
+                              style: TextStyle(color: theme.textTheme.bodyLarge?.color),
                               decoration: InputDecoration(
-                                labelText: 'Password',
-                                prefixIcon: const Icon(Icons.lock_outlined),
+                                labelText: Provider.of<LanguageProvider>(context).translate('Password'),
+                                prefixIcon: Icon(
+                                  Icons.lock_outlined,
+                                  color: theme.iconTheme.color,
+                                ),
+                                labelStyle: TextStyle(color: theme.textTheme.bodyMedium?.color),
+                                hintStyle: TextStyle(color: theme.textTheme.bodyMedium?.color?.withOpacity(0.6)),
                                 suffixIcon: IconButton(
                                   icon: Icon(
                                     _obscurePassword ? Icons.visibility : Icons.visibility_off,
+                                    color: theme.iconTheme.color,
                                   ),
                                   onPressed: () {
                                     setState(() {
@@ -228,7 +264,7 @@ class _LoginScreenState extends State<LoginScreen>
                               ),
                               validator: (value) {
                                 if (value == null || value.isEmpty) {
-                                  return 'Please enter your password';
+                                  return Provider.of<LanguageProvider>(context, listen: false).translate('Please enter your password');
                                 }
                                 if (value.length < 6) {
                                   return 'Password must be at least 6 characters';
@@ -258,11 +294,12 @@ class _LoginScreenState extends State<LoginScreen>
                                             valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
                                           ),
                                         )
-                                      : const Text(
+                                      : TranslatedText(
                                           'Sign In',
                                           style: TextStyle(
                                             fontSize: 16,
                                             fontWeight: FontWeight.w600,
+                                            color: Colors.white,
                                           ),
                                         ),
                                 );
@@ -277,14 +314,22 @@ class _LoginScreenState extends State<LoginScreen>
                                     margin: const EdgeInsets.only(top: 16),
                                     padding: const EdgeInsets.all(12),
                                     decoration: BoxDecoration(
-                                      color: Colors.red[50],
+                                      color: theme.brightness == Brightness.dark 
+                                          ? Colors.red[900]?.withOpacity(0.3)
+                                          : Colors.red[50],
                                       borderRadius: BorderRadius.circular(8),
-                                      border: Border.all(color: Colors.red[200]!),
+                                      border: Border.all(
+                                        color: theme.brightness == Brightness.dark 
+                                            ? Colors.red[400]!
+                                            : Colors.red[200]!,
+                                      ),
                                     ),
                                     child: Text(
                                       authProvider.errorMessage!,
                                       style: TextStyle(
-                                        color: Colors.red[700],
+                                        color: theme.brightness == Brightness.dark 
+                                            ? Colors.red[300]
+                                            : Colors.red[700],
                                         fontSize: 14,
                                       ),
                                       textAlign: TextAlign.center,
@@ -301,9 +346,11 @@ class _LoginScreenState extends State<LoginScreen>
                             Row(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
-                                Text(
+                                TranslatedText(
                                   'Don\'t have an account? ',
-                                  style: TextStyle(color: Colors.grey[600]),
+                                  style: TextStyle(
+                                    color: theme.textTheme.bodyMedium?.color?.withOpacity(0.7),
+                                  ),
                                 ),
                                 GestureDetector(
                                   onTap: () {
@@ -313,7 +360,7 @@ class _LoginScreenState extends State<LoginScreen>
                                       ),
                                     );
                                   },
-                                  child: const Text(
+                                  child: const TranslatedText(
                                     'Sign Up',
                                     style: TextStyle(
                                       color: Color(0xFF10B981),

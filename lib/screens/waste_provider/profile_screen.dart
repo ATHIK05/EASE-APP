@@ -2,13 +2,19 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/theme_provider.dart';
+import '../../providers/language_provider.dart';
 import '../auth/login_screen.dart';
+import '../../widgets/translated_text.dart';
+import '../../widgets/language_selector.dart';
 
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    
     return Scaffold(
       body: Container(
         decoration: const BoxDecoration(
@@ -25,13 +31,26 @@ class ProfileScreen extends StatelessWidget {
           child: Column(
             children: [
               // Profile Header
-              Padding(
-                padding: const EdgeInsets.all(24),
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(20),
                 child: Consumer<AuthProvider>(
                   builder: (context, authProvider, child) {
                     final user = authProvider.currentUser;
                     return Column(
                       children: [
+                        // Top Row with Language Selector
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.end,
+                          children: [
+                            LanguageSelector(
+                              iconColor: Colors.white,
+                              backgroundColor: theme.cardColor,
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 16),
+                        
                         CircleAvatar(
                           radius: 50,
                           backgroundColor: Colors.white,
@@ -76,9 +95,9 @@ class ProfileScreen extends StatelessWidget {
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                           children: [
-                            _buildStatItem('Points', '${user?.points ?? 0}'),
-                            _buildStatItem('Level', user?.level ?? 'Beginner'),
-                            _buildStatItem('Reports', '${user?.achievements.length ?? 0}'),
+                            _buildStatItem(context, 'Points', '${user?.points ?? 0}'),
+                            _buildStatItem(context, 'Level', user?.level ?? 'Beginner'),
+                            _buildStatItem(context, 'Reports', '${user?.achievements.length ?? 0}'),
                           ],
                         ),
                       ],
@@ -90,55 +109,56 @@ class ProfileScreen extends StatelessWidget {
               // Profile Options
               Expanded(
                 child: Container(
-                  decoration: const BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.only(
+                  width: double.infinity,
+                  decoration: BoxDecoration(
+                    color: theme.scaffoldBackgroundColor,
+                    borderRadius: const BorderRadius.only(
                       topLeft: Radius.circular(30),
                       topRight: Radius.circular(30),
                     ),
                   ),
                   child: ListView(
-                    padding: const EdgeInsets.all(24),
+                    padding: const EdgeInsets.all(20),
                     children: [
                       _buildProfileOption(
                         context,
-                        'Edit Profile',
-                        'Update your personal information',
+                        Provider.of<LanguageProvider>(context).translate('Edit Profile'),
+                        Provider.of<LanguageProvider>(context).translate('Update your personal information'),
                         Icons.person_outline,
                         () => _showEditProfile(context),
                       ),
                       _buildProfileOption(
                         context,
-                        'My Reports',
-                        'View your waste reports history',
+                        Provider.of<LanguageProvider>(context).translate('My Reports'),
+                        Provider.of<LanguageProvider>(context).translate('View your waste reports history'),
                         Icons.history,
                         () => _showMyReports(context),
                       ),
                       _buildProfileOption(
                         context,
-                        'Achievements',
-                        'View your earned badges and certificates',
+                        Provider.of<LanguageProvider>(context).translate('Achievements'),
+                        Provider.of<LanguageProvider>(context).translate('View your earned badges and certificates'),
                         Icons.emoji_events,
                         () => _showAchievements(context),
                       ),
                       _buildProfileOption(
                         context,
-                        'Rewards Store',
-                        'Redeem points for eco-friendly rewards',
+                        Provider.of<LanguageProvider>(context).translate('Rewards Store'),
+                        Provider.of<LanguageProvider>(context).translate('Redeem points for eco-friendly rewards'),
                         Icons.card_giftcard,
                         () => _showRewardsStore(context),
                       ),
                       _buildProfileOption(
                         context,
-                        'Settings',
-                        'App preferences and notifications',
+                        Provider.of<LanguageProvider>(context).translate('Settings'),
+                        Provider.of<LanguageProvider>(context).translate('App preferences and notifications'),
                         Icons.settings,
                         () => _showSettings(context),
                       ),
                       _buildProfileOption(
                         context,
-                        'Help & Support',
-                        'Get help and contact support',
+                        Provider.of<LanguageProvider>(context).translate('Help & Support'),
+                        Provider.of<LanguageProvider>(context).translate('Get help and contact support'),
                         Icons.help_outline,
                         () => _showHelp(context),
                       ),
@@ -150,7 +170,7 @@ class ProfileScreen extends StatelessWidget {
                         child: OutlinedButton.icon(
                           onPressed: () => _handleLogout(context),
                           icon: const Icon(Icons.logout, color: Colors.red),
-                          label: const Text(
+                          label: const TranslatedText(
                             'Logout',
                             style: TextStyle(
                               color: Colors.red,
@@ -177,7 +197,7 @@ class ProfileScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildStatItem(String label, String value) {
+  Widget _buildStatItem(BuildContext context, String label, String value) {
     return Column(
       children: [
         Text(
@@ -189,7 +209,7 @@ class ProfileScreen extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 4),
-        Text(
+        TranslatedText(
           label,
           style: TextStyle(
             color: Colors.white.withOpacity(0.8),
@@ -207,6 +227,8 @@ class ProfileScreen extends StatelessWidget {
     IconData icon,
     VoidCallback onTap,
   ) {
+    final theme = Theme.of(context);
+    
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       child: ListTile(
@@ -214,12 +236,12 @@ class ProfileScreen extends StatelessWidget {
         leading: Container(
           padding: const EdgeInsets.all(8),
           decoration: BoxDecoration(
-            color: const Color(0xFF10B981).withOpacity(0.1),
+            color: theme.primaryColor.withOpacity(0.1),
             borderRadius: BorderRadius.circular(8),
           ),
           child: Icon(
             icon,
-            color: const Color(0xFF10B981),
+            color: theme.primaryColor,
             size: 20,
           ),
         ),
@@ -233,20 +255,19 @@ class ProfileScreen extends StatelessWidget {
         subtitle: Text(
           subtitle,
           style: TextStyle(
-            color: Colors.grey[600],
+            color: theme.textTheme.bodySmall?.color,
             fontSize: 12,
           ),
         ),
         trailing: const Icon(
           Icons.arrow_forward_ios,
           size: 16,
-          color: Colors.grey,
         ),
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(12),
         ),
-        tileColor: Colors.grey[50],
+        tileColor: theme.cardColor,
       ),
     );
   }
@@ -282,6 +303,7 @@ class ProfileScreen extends StatelessWidget {
   void _showSettings(BuildContext context) {
     showModalBottomSheet(
       context: context,
+      backgroundColor: Theme.of(context).cardColor,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.only(
           topLeft: Radius.circular(20),
@@ -303,12 +325,13 @@ class ProfileScreen extends StatelessWidget {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Logout'),
-        content: const Text('Are you sure you want to logout?'),
+        backgroundColor: Theme.of(context).cardColor,
+        title: const TranslatedText('Logout'),
+        content: const TranslatedText('Are you sure you want to logout?'),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Cancel'),
+            child: const TranslatedText('Cancel'),
           ),
           TextButton(
             onPressed: () async {
@@ -321,7 +344,7 @@ class ProfileScreen extends StatelessWidget {
                 );
               }
             },
-            child: const Text(
+            child: const TranslatedText(
               'Logout',
               style: TextStyle(color: Colors.red),
             ),
@@ -337,16 +360,28 @@ class SettingsBottomSheet extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    
     return Container(
+      width: double.infinity,
       padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        color: theme.cardColor,
+        borderRadius: const BorderRadius.only(
+          topLeft: Radius.circular(20),
+          topRight: Radius.circular(20),
+        ),
+      ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
+          TranslatedText(
             'Settings',
-            style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+            style: TextStyle(
               fontWeight: FontWeight.bold,
+              fontSize: 20,
+              color: theme.textTheme.headlineSmall?.color,
             ),
           ),
           const SizedBox(height: 24),
@@ -356,47 +391,134 @@ class SettingsBottomSheet extends StatelessWidget {
               return ListTile(
                 leading: Icon(
                   themeProvider.isDarkMode ? Icons.dark_mode : Icons.light_mode,
-                  color: const Color(0xFF10B981),
+                  color: theme.primaryColor,
                 ),
-                title: const Text('Dark Mode'),
+                title: const TranslatedText('Dark Mode'),
                 trailing: Switch(
                   value: themeProvider.isDarkMode,
                   onChanged: (value) => themeProvider.toggleTheme(),
-                  activeColor: const Color(0xFF10B981),
+                  activeColor: theme.primaryColor,
                 ),
                 contentPadding: EdgeInsets.zero,
+                titleTextStyle: TextStyle(color: theme.textTheme.bodyLarge?.color),
               );
             },
           ),
           
           ListTile(
-            leading: const Icon(
+            leading: Icon(
               Icons.notifications,
-              color: Color(0xFF10B981),
+              color: theme.primaryColor,
             ),
-            title: const Text('Notifications'),
+            title: const TranslatedText('Notifications'),
             trailing: Switch(
               value: true,
               onChanged: (value) {},
-              activeColor: const Color(0xFF10B981),
+              activeColor: theme.primaryColor,
             ),
             contentPadding: EdgeInsets.zero,
+            titleTextStyle: TextStyle(color: theme.textTheme.bodyLarge?.color),
           ),
           
-          ListTile(
-            leading: const Icon(
-              Icons.language,
-              color: Color(0xFF10B981),
-            ),
-            title: const Text('Language'),
-            subtitle: const Text('English'),
-            trailing: const Icon(Icons.arrow_forward_ios, size: 16),
-            contentPadding: EdgeInsets.zero,
-            onTap: () {
-              // Show language selection
+          Consumer<LanguageProvider>(
+            builder: (context, languageProvider, child) {
+              return ListTile(
+                leading: Icon(
+                  Icons.language,
+                  color: theme.primaryColor,
+                ),
+                title: const TranslatedText('Language'),
+                subtitle: Text(
+                  languageProvider.currentLanguageName,
+                  style: TextStyle(color: theme.textTheme.bodySmall?.color),
+                ),
+                trailing: const Icon(Icons.arrow_forward_ios, size: 16),
+                contentPadding: EdgeInsets.zero,
+                titleTextStyle: TextStyle(color: theme.textTheme.bodyLarge?.color),
+                onTap: () => _showLanguageSelection(context),
+              );
             },
           ),
         ],
+      ),
+    );
+  }
+
+  void _showLanguageSelection(BuildContext context) {
+    final theme = Theme.of(context);
+    
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: theme.cardColor,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.only(
+          topLeft: Radius.circular(20),
+          topRight: Radius.circular(20),
+        ),
+      ),
+      builder: (context) => Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            TranslatedText(
+              'Language',
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                fontSize: 20,
+                color: theme.textTheme.headlineSmall?.color,
+              ),
+            ),
+            const SizedBox(height: 20),
+            
+            Consumer<LanguageProvider>(
+              builder: (context, languageProvider, child) {
+                return Column(
+                  children: languageProvider.supportedLanguages.map((language) {
+                    final isSelected = language == languageProvider.currentLanguage;
+                    final languageName = TranslationService().getLanguageName(language);
+                    
+                    return Container(
+                      width: double.infinity,
+                      margin: const EdgeInsets.only(bottom: 8),
+                      child: ListTile(
+                        leading: Icon(
+                          isSelected ? Icons.radio_button_checked : Icons.radio_button_unchecked,
+                          color: isSelected ? theme.primaryColor : theme.iconTheme.color,
+                        ),
+                        title: Text(
+                          languageName,
+                          style: TextStyle(
+                            fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                            color: isSelected ? theme.primaryColor : theme.textTheme.bodyLarge?.color,
+                          ),
+                        ),
+                        onTap: () async {
+                          await languageProvider.changeLanguage(language);
+                          if (context.mounted) {
+                            Navigator.of(context).pop();
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text('Language changed to $languageName'),
+                                backgroundColor: theme.primaryColor,
+                              ),
+                            );
+                          }
+                        },
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        tileColor: isSelected ? theme.primaryColor.withOpacity(0.1) : null,
+                      ),
+                    );
+                  }).toList(),
+                );
+              },
+            ),
+          ],
+        ),
       ),
     );
   }

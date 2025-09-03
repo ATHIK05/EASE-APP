@@ -22,8 +22,8 @@ class LanguageProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<String> translate(String text) async {
-    return await _translationService.translate(text);
+  String translate(String text) {
+    return _translationService.translate(text);
   }
 
   List<SupportedLanguage> get supportedLanguages => SupportedLanguage.values;

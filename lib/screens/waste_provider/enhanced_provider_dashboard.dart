@@ -117,6 +117,9 @@ class EnhancedProviderHomeTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    
     return Scaffold(
       body: Container(
         decoration: const BoxDecoration(
@@ -135,8 +138,9 @@ class EnhancedProviderHomeTab extends StatelessWidget {
             child: Column(
               children: [
                 // Enhanced Header
-                Padding(
-                  padding: const EdgeInsets.all(24),
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(20),
                   child: Consumer<AuthProvider>(
                     builder: (context, authProvider, child) {
                       final user = authProvider.currentUser;
@@ -176,7 +180,7 @@ class EnhancedProviderHomeTab extends StatelessWidget {
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     Text(
-                                      'Welcome back,',
+                                      Provider.of<LanguageProvider>(context).translate('Welcome back') + ',',
                                       style: TextStyle(
                                         color: Colors.white.withOpacity(0.9),
                                         fontSize: 14,
@@ -186,7 +190,7 @@ class EnhancedProviderHomeTab extends StatelessWidget {
                                       user?.name ?? 'User',
                                       style: const TextStyle(
                                         color: Colors.white,
-                                        fontSize: 22,
+                                        fontSize: 20,
                                         fontWeight: FontWeight.bold,
                                       ),
                                     ),
@@ -200,6 +204,11 @@ class EnhancedProviderHomeTab extends StatelessWidget {
                                   ],
                                 ),
                               ),
+                              LanguageSelector(
+                                iconColor: Colors.white,
+                                backgroundColor: theme.cardColor,
+                              ),
+                              const SizedBox(width: 12),
                               Container(
                                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                                 decoration: BoxDecoration(
@@ -249,7 +258,7 @@ class EnhancedProviderHomeTab extends StatelessWidget {
                             ),
                             child: Column(
                               children: [
-                                const Text(
+                                const TranslatedText(
                                   'Your Impact Today',
                                   style: TextStyle(
                                     color: Colors.white,
@@ -261,9 +270,9 @@ class EnhancedProviderHomeTab extends StatelessWidget {
                                 Row(
                                   mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                                   children: [
-                                    _buildImpactStat('Reports', '3', Icons.report, Colors.orange),
-                                    _buildImpactStat('Points', '150', Icons.stars, Colors.yellow),
-                                    _buildImpactStat('Rank', '#12', Icons.trending_up, Colors.blue),
+                                    _buildImpactStat(context, 'Reports', '3', Icons.report, Colors.orange),
+                                    _buildImpactStat(context, 'Points', '150', Icons.stars, Colors.yellow),
+                                    _buildImpactStat(context, 'Rank', '#12', Icons.trending_up, Colors.blue),
                                   ],
                                 ),
                               ],
@@ -277,23 +286,26 @@ class EnhancedProviderHomeTab extends StatelessWidget {
                 
                 // Main Content
                 Container(
+                  width: double.infinity,
                   decoration: const BoxDecoration(
-                    color: Colors.white,
+                    color: theme.scaffoldBackgroundColor,
                     borderRadius: BorderRadius.only(
                       topLeft: Radius.circular(30),
                       topRight: Radius.circular(30),
                     ),
                   ),
                   child: Padding(
-                    padding: const EdgeInsets.all(24),
+                    padding: const EdgeInsets.all(20),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         // Quick Actions Grid
-                        Text(
+                        TranslatedText(
                           'Quick Actions',
-                          style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                          style: TextStyle(
                             fontWeight: FontWeight.bold,
+                            fontSize: 20,
+                            color: theme.textTheme.headlineSmall?.color,
                           ),
                         ),
                         const SizedBox(height: 16),
@@ -308,8 +320,8 @@ class EnhancedProviderHomeTab extends StatelessWidget {
                           children: [
                             _buildQuickActionCard(
                               context,
-                              'Report Waste',
-                              'Document improper disposal',
+                              Provider.of<LanguageProvider>(context).translate('Report Waste'),
+                              Provider.of<LanguageProvider>(context).translate('Document improper disposal'),
                               Icons.camera_alt,
                               const Color(0xFFF59E0B),
                               () => Navigator.of(context).push(
@@ -318,8 +330,8 @@ class EnhancedProviderHomeTab extends StatelessWidget {
                             ),
                             _buildQuickActionCard(
                               context,
-                              'Training Hub',
-                              'Learn waste management',
+                              Provider.of<LanguageProvider>(context).translate('Training Hub'),
+                              Provider.of<LanguageProvider>(context).translate('Learn waste management'),
                               Icons.school,
                               const Color(0xFF3B82F6),
                               () => Navigator.of(context).push(
@@ -328,8 +340,8 @@ class EnhancedProviderHomeTab extends StatelessWidget {
                             ),
                             _buildQuickActionCard(
                               context,
-                              'Rewards Store',
-                              'Redeem eco-points',
+                              Provider.of<LanguageProvider>(context).translate('Rewards Store'),
+                              Provider.of<LanguageProvider>(context).translate('Redeem eco-points'),
                               Icons.card_giftcard,
                               const Color(0xFF8B5CF6),
                               () => Navigator.of(context).push(
@@ -338,8 +350,8 @@ class EnhancedProviderHomeTab extends StatelessWidget {
                             ),
                             _buildQuickActionCard(
                               context,
-                              'Green Champion',
-                              'Lead your community',
+                              Provider.of<LanguageProvider>(context).translate('Green Champion'),
+                              Provider.of<LanguageProvider>(context).translate('Lead your community'),
                               Icons.eco,
                               const Color(0xFF059669),
                               () => Navigator.of(context).push(
@@ -355,11 +367,12 @@ class EnhancedProviderHomeTab extends StatelessWidget {
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            const Text(
+                            TranslatedText(
                               'Community Activity',
                               style: TextStyle(
                                 fontSize: 20,
                                 fontWeight: FontWeight.bold,
+                                color: theme.textTheme.headlineSmall?.color,
                               ),
                             ),
                             TextButton.icon(
@@ -367,7 +380,7 @@ class EnhancedProviderHomeTab extends StatelessWidget {
                                 MaterialPageRoute(builder: (_) => const CommunityDashboard()),
                               ),
                               icon: const Icon(Icons.arrow_forward, size: 16),
-                              label: const Text('View All'),
+                              label: const TranslatedText('View All'),
                             ),
                           ],
                         ),
@@ -380,32 +393,33 @@ class EnhancedProviderHomeTab extends StatelessWidget {
                             
                             if (recentReports.isEmpty) {
                               return Container(
+                                width: double.infinity,
                                 padding: const EdgeInsets.all(24),
                                 decoration: BoxDecoration(
-                                  color: Colors.grey[50],
+                                  color: theme.cardColor,
                                   borderRadius: BorderRadius.circular(16),
-                                  border: Border.all(color: Colors.grey[200]!),
+                                  border: Border.all(color: theme.dividerColor),
                                 ),
                                 child: Column(
                                   children: [
                                     Icon(
                                       Icons.people_outline,
                                       size: 48,
-                                      color: Colors.grey[400],
+                                      color: theme.iconTheme.color?.withOpacity(0.5),
                                     ),
                                     const SizedBox(height: 12),
-                                    Text(
+                                    TranslatedText(
                                       'No community activity yet',
                                       style: TextStyle(
-                                        color: Colors.grey[600],
+                                        color: theme.textTheme.bodyMedium?.color,
                                         fontWeight: FontWeight.w600,
                                       ),
                                     ),
                                     const SizedBox(height: 4),
-                                    Text(
+                                    TranslatedText(
                                       'Be the first to report waste in your area',
                                       style: TextStyle(
-                                        color: Colors.grey[500],
+                                        color: theme.textTheme.bodySmall?.color,
                                         fontSize: 12,
                                       ),
                                       textAlign: TextAlign.center,
@@ -432,18 +446,22 @@ class EnhancedProviderHomeTab extends StatelessWidget {
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            const TranslatedText(
+                            TranslatedText(
                               'Daily Eco Games',
                               style: TextStyle(
                                 fontWeight: FontWeight.bold,
-                                fontSize: 24,
+                                fontSize: 20,
+                                color: theme.textTheme.headlineSmall?.color,
                               ),
                             ),
                             TextButton(
                               onPressed: () => Navigator.of(context).push(
                                 MaterialPageRoute(builder: (_) => const GamesScreen()),
                               ),
-                              child: const TranslatedText('Play All'),
+                              child: TranslatedText(
+                                'View All',
+                                style: TextStyle(color: theme.primaryColor),
+                              ),
                             ),
                           ],
                         ),
@@ -474,7 +492,7 @@ class EnhancedProviderHomeTab extends StatelessWidget {
     );
   }
 
-  Widget _buildImpactStat(String label, String value, IconData icon, Color color) {
+  Widget _buildImpactStat(BuildContext context, String label, String value, IconData icon, Color color) {
     return Column(
       children: [
         Container(
@@ -498,7 +516,7 @@ class EnhancedProviderHomeTab extends StatelessWidget {
             fontWeight: FontWeight.bold,
           ),
         ),
-        Text(
+        TranslatedText(
           label,
           style: TextStyle(
             color: Colors.white.withOpacity(0.8),
@@ -517,6 +535,8 @@ class EnhancedProviderHomeTab extends StatelessWidget {
     Color color,
     VoidCallback onTap,
   ) {
+    final theme = Theme.of(context);
+    
     return GestureDetector(
       onTap: onTap,
       child: Container(
@@ -575,6 +595,7 @@ class EnhancedProviderHomeTab extends StatelessWidget {
   }
 
   Widget _buildActivityCard(BuildContext context, dynamic report) {
+    final theme = Theme.of(context);
     Color statusColor;
     IconData statusIcon;
     
@@ -603,9 +624,9 @@ class EnhancedProviderHomeTab extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: theme.cardColor,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.grey[200]!),
+        border: Border.all(color: theme.dividerColor),
         boxShadow: [
           BoxShadow(
             color: Colors.grey.withOpacity(0.1),
@@ -644,7 +665,7 @@ class EnhancedProviderHomeTab extends StatelessWidget {
                 Text(
                   report.location,
                   style: TextStyle(
-                    color: Colors.grey[600],
+                    color: theme.textTheme.bodySmall?.color,
                     fontSize: 12,
                   ),
                 ),
@@ -661,7 +682,7 @@ class EnhancedProviderHomeTab extends StatelessWidget {
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Text(
-                  report.status.toString().split('.').last.toUpperCase(),
+                  Provider.of<LanguageProvider>(context).translate(report.status.toString().split('.').last),
                   style: TextStyle(
                     color: statusColor,
                     fontSize: 9,
@@ -673,7 +694,7 @@ class EnhancedProviderHomeTab extends StatelessWidget {
               Text(
                 _formatDate(report.createdAt),
                 style: TextStyle(
-                  color: Colors.grey[500],
+                  color: theme.textTheme.bodySmall?.color?.withOpacity(0.7),
                   fontSize: 10,
                 ),
               ),
@@ -685,6 +706,7 @@ class EnhancedProviderHomeTab extends StatelessWidget {
   }
 
   Widget _buildGameCard(BuildContext context, dynamic game, GameProvider gameProvider) {
+    final theme = Theme.of(context);
     final canPlay = gameProvider.canPlayGame(game.id);
     
     return Container(
@@ -726,7 +748,7 @@ class EnhancedProviderHomeTab extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  game.title,
+                  Provider.of<LanguageProvider>(context).translate(game.title),
                   style: const TextStyle(
                     color: Colors.white,
                     fontWeight: FontWeight.bold,
@@ -735,7 +757,7 @@ class EnhancedProviderHomeTab extends StatelessWidget {
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  game.description,
+                  Provider.of<LanguageProvider>(context).translate(game.description),
                   style: TextStyle(
                     color: Colors.white.withOpacity(0.9),
                     fontSize: 12,
@@ -751,7 +773,7 @@ class EnhancedProviderHomeTab extends StatelessWidget {
                     ),
                     const SizedBox(width: 4),
                     Text(
-                      '${game.pointsReward} points',
+                      '${game.pointsReward} ${Provider.of<LanguageProvider>(context).translate('points')}',
                       style: TextStyle(
                         color: Colors.yellow[300],
                         fontWeight: FontWeight.w600,
@@ -780,10 +802,11 @@ class EnhancedProviderHomeTab extends StatelessWidget {
               ),
             ),
             child: Text(
-              canPlay ? 'Play' : 'Played',
-              style: const TextStyle(
+              canPlay ? 'Play Now' : 'Played Today',
+              style: TextStyle(
                 fontWeight: FontWeight.w600,
                 fontSize: 12,
+                color: Colors.purple[600],
               ),
             ),
           ),

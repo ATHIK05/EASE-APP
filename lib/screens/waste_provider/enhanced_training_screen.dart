@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../../providers/training_provider.dart';
 import '../../providers/auth_provider.dart';
-import '../../models/training_model.dart';
+import '../../providers/training_provider.dart';
 import '../../models/user_model.dart';
-import '../../widgets/training_widgets.dart';
+import '../../models/training_model.dart';
 import '../../widgets/translated_text.dart';
+import '../../widgets/language_selector.dart';
+import '../../widgets/training_widgets.dart';
 
 class EnhancedTrainingScreen extends StatefulWidget {
   const EnhancedTrainingScreen({super.key});
@@ -16,35 +17,36 @@ class EnhancedTrainingScreen extends StatefulWidget {
 
 class _EnhancedTrainingScreenState extends State<EnhancedTrainingScreen>
     with TickerProviderStateMixin {
-  late TabController _tabController;
-  late AnimationController _progressAnimationController;
-  late List<Animation<double>> _progressAnimations;
+  late AnimationController _animationController;
+  late Animation<double> _fadeAnimation;
+  late Animation<Offset> _slideAnimation;
 
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 3, vsync: this);
-    _progressAnimationController = AnimationController(
-      duration: const Duration(milliseconds: 2000),
+    _animationController = AnimationController(
+      duration: const Duration(milliseconds: 1200),
       vsync: this,
     );
-    
-    _progressAnimations = List.generate(3, (index) {
-      return Tween<double>(
-        begin: 0.0,
-        end: 1.0,
-      ).animate(CurvedAnimation(
-        parent: _progressAnimationController,
-        curve: Interval(
-          index * 0.3,
-          (index * 0.3) + 0.7,
-          curve: Curves.elasticOut,
-        ),
-      ));
-    });
-    
-    _progressAnimationController.forward();
-    
+
+    _fadeAnimation = Tween<double>(
+      begin: 0.0,
+      end: 1.0,
+    ).animate(CurvedAnimation(
+      parent: _animationController,
+      curve: const Interval(0.0, 0.8, curve: Curves.easeOut),
+    ));
+
+    _slideAnimation = Tween<Offset>(
+      begin: const Offset(0, 0.3),
+      end: Offset.zero,
+    ).animate(CurvedAnimation(
+      parent: _animationController,
+      curve: const Interval(0.2, 1.0, curve: Curves.easeOutBack),
+    ));
+
+    _animationController.forward();
+
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final authProvider = Provider.of<AuthProvider>(context, listen: false);
       final trainingProvider = Provider.of<TrainingProvider>(context, listen: false);
@@ -57,23 +59,25 @@ class _EnhancedTrainingScreenState extends State<EnhancedTrainingScreen>
 
   @override
   void dispose() {
-    _tabController.dispose();
-    _progressAnimationController.dispose();
+    _animationController.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    
     return Scaffold(
       body: Container(
-        decoration: const BoxDecoration(
+        decoration: BoxDecoration(
           gradient: LinearGradient(
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
             colors: [
-              Color(0xFF3B82F6),
-              Color(0xFF1D4ED8),
-              Color(0xFF1E40AF),
+              const Color(0xFF3B82F6),
+              const Color(0xFF1D4ED8),
+              if (isDark) const Color(0xFF1E293B) else const Color(0xFF1E40AF),
             ],
           ),
         ),
@@ -81,93 +85,134 @@ class _EnhancedTrainingScreenState extends State<EnhancedTrainingScreen>
           child: Column(
             children: [
               // Enhanced Header
-              Padding(
-                padding: const EdgeInsets.all(24),
-                child: Column(
-                  children: [
-                    Row(
+              FadeTransition(
+                opacity: _fadeAnimation,
+                child: SlideTransition(
+                  position: _slideAnimation,
+                  child: Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(20),
+                    child: Column(
                       children: [
-                        IconButton(
-                          onPressed: () => Navigator.of(context).pop(),
-                          icon: const Icon(
-                            Icons.arrow_back,
-                            color: Colors.white,
-                            size: 28,
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        Container(
-                          padding: const EdgeInsets.all(16),
-                          decoration: BoxDecoration(
-                            color: Colors.white.withOpacity(0.2),
-                            borderRadius: BorderRadius.circular(16),
-                            border: Border.all(
-                              color: Colors.white.withOpacity(0.3),
-                              width: 2,
+                        Row(
+                          children: [
+                            IconButton(
+                              onPressed: () => Navigator.of(context).pop(),
+                              icon: const Icon(
+                                Icons.arrow_back,
+                                color: Colors.white,
+                                size: 28,
+                              ),
                             ),
-                          ),
-                          child: const Icon(
-                            Icons.school,
-                            color: Colors.white,
-                            size: 32,
-                          ),
-                        ),
-                        const SizedBox(width: 16),
-                        const Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              TranslatedText(
-                                'Mandatory Training Hub',
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 24,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                              TranslatedText(
-                                'Master waste management skills',
-                                style: TextStyle(
-                                  color: Colors.white70,
-                                  fontSize: 16,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        Consumer<TrainingProvider>(
-                          builder: (context, trainingProvider, child) {
-                            final authProvider = Provider.of<AuthProvider>(context, listen: false);
-                            final completionPercentage = trainingProvider.getCompletionPercentage(
-                              authProvider.currentUser?.role ?? UserRole.wasteProvider
-                            );
-                            
-                            return Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                            const SizedBox(width: 12),
+                            Container(
+                              padding: const EdgeInsets.all(16),
                               decoration: BoxDecoration(
                                 color: Colors.white.withOpacity(0.2),
-                                borderRadius: BorderRadius.circular(20),
+                                borderRadius: BorderRadius.circular(16),
                                 border: Border.all(
                                   color: Colors.white.withOpacity(0.3),
                                   width: 2,
                                 ),
                               ),
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
+                              child: const Icon(
+                                Icons.school,
+                                color: Colors.white,
+                                size: 32,
+                              ),
+                            ),
+                            const SizedBox(width: 16),
+                            const Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  const Icon(
-                                    Icons.school,
-                                    color: Colors.yellow,
-                                    size: 16,
-                                  ),
-                                  const SizedBox(width: 6),
-                                  Text(
-                                    '${(completionPercentage * 100).round()}%',
-                                    style: const TextStyle(
+                                  TranslatedText(
+                                    'Waste Management Training',
+                                    style: TextStyle(
                                       color: Colors.white,
-                                      fontSize: 16,
+                                      fontSize: 22,
                                       fontWeight: FontWeight.bold,
                                     ),
+                                  ),
+                                  TranslatedText(
+                                    'Master the skills for a cleaner India',
+                                    style: TextStyle(
+                                      color: Colors.white70,
+                                      fontSize: 14,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            LanguageSelector(
+                              iconColor: Colors.white,
+                              backgroundColor: theme.cardColor,
+                            ),
+                          ],
+                        ),
+                        
+                        const SizedBox(height: 20),
+                        
+                        // Progress Overview
+                        Consumer2<TrainingProvider, AuthProvider>(
+                          builder: (context, trainingProvider, authProvider, child) {
+                            final user = authProvider.currentUser;
+                            final completionPercentage = trainingProvider.getCompletionPercentage(
+                              user?.role ?? UserRole.wasteProvider
+                            );
+                            final totalPointsEarned = _calculateTotalPoints(trainingProvider, user?.role);
+                            
+                            return Container(
+                              width: double.infinity,
+                              padding: const EdgeInsets.all(20),
+                              decoration: BoxDecoration(
+                                color: Colors.white.withOpacity(0.15),
+                                borderRadius: BorderRadius.circular(20),
+                                border: Border.all(
+                                  color: Colors.white.withOpacity(0.3),
+                                  width: 1,
+                                ),
+                              ),
+                              child: Column(
+                                children: [
+                                  const TranslatedText(
+                                    'Your Progress',
+                                    style: TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 18,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 16),
+                                  Row(
+                                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                                    children: [
+                                      _buildProgressStat(
+                                        'Completion',
+                                        '${(completionPercentage * 100).round()}%',
+                                        Icons.school,
+                                        Colors.yellow,
+                                      ),
+                                      _buildProgressStat(
+                                        'Points Earned',
+                                        '$totalPointsEarned',
+                                        Icons.stars,
+                                        Colors.orange,
+                                      ),
+                                      _buildProgressStat(
+                                        'Certificates',
+                                        '${_getCertificateCount(trainingProvider)}',
+                                        Icons.verified,
+                                        Colors.green,
+                                      ),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 16),
+                                  LinearProgressIndicator(
+                                    value: completionPercentage,
+                                    backgroundColor: Colors.white.withOpacity(0.3),
+                                    valueColor: const AlwaysStoppedAnimation<Color>(Colors.yellow),
+                                    minHeight: 8,
                                   ),
                                 ],
                               ),
@@ -176,141 +221,47 @@ class _EnhancedTrainingScreenState extends State<EnhancedTrainingScreen>
                         ),
                       ],
                     ),
-                    
-                    const SizedBox(height: 20),
-                    
-                    // Training Progress Overview
-                    Consumer2<TrainingProvider, AuthProvider>(
-                      builder: (context, trainingProvider, authProvider, child) {
-                        final userRole = authProvider.currentUser?.role ?? UserRole.wasteProvider;
-                        final trainings = trainingProvider.getTrainingsForRole(userRole);
-                        final completedCount = trainings.where((t) => 
-                            trainingProvider.userProgress[t.id] == TrainingStatus.completed).length;
-                        final mandatoryComplete = trainingProvider.isMandatoryTrainingComplete(userRole);
-                        
-                        return Container(
-                          padding: const EdgeInsets.all(20),
-                          decoration: BoxDecoration(
-                            color: Colors.white.withOpacity(0.15),
-                            borderRadius: BorderRadius.circular(20),
-                            border: Border.all(
-                              color: Colors.white.withOpacity(0.3),
-                              width: 1,
-                            ),
-                          ),
-                          child: Column(
-                            children: [
-                              const TranslatedText(
-                                'Training Progress',
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                              const SizedBox(height: 16),
-                              Row(
-                                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                                children: [
-                                  AnimatedBuilder(
-                                    animation: _progressAnimations[0],
-                                    builder: (context, child) {
-                                      return Transform.scale(
-                                        scale: _progressAnimations[0].value,
-                                        child: _buildProgressStat(
-                                          'Completed',
-                                          '$completedCount/${trainings.length}',
-                                          Icons.check_circle,
-                                          Colors.green,
-                                        ),
-                                      );
-                                    },
-                                  ),
-                                  AnimatedBuilder(
-                                    animation: _progressAnimations[1],
-                                    builder: (context, child) {
-                                      return Transform.scale(
-                                        scale: _progressAnimations[1].value,
-                                        child: _buildProgressStat(
-                                          'Mandatory',
-                                          mandatoryComplete ? 'Done' : 'Pending',
-                                          Icons.priority_high,
-                                          mandatoryComplete ? Colors.green : Colors.orange,
-                                        ),
-                                      );
-                                    },
-                                  ),
-                                  AnimatedBuilder(
-                                    animation: _progressAnimations[2],
-                                    builder: (context, child) {
-                                      return Transform.scale(
-                                        scale: _progressAnimations[2].value,
-                                        child: _buildProgressStat(
-                                          'Points',
-                                          '${authProvider.currentUser?.points ?? 0}',
-                                          Icons.stars,
-                                          Colors.yellow,
-                                        ),
-                                      );
-                                    },
-                                  ),
-                                ],
-                              ),
-                            ],
-                          ),
-                        );
-                      },
-                    ),
-                    
-                    const SizedBox(height: 16),
-                    
-                    // Tab Bar
-                    Container(
-                      decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.15),
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                      child: TabBar(
-                        controller: _tabController,
-                        indicator: BoxDecoration(
-                          color: Colors.white.withOpacity(0.3),
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        indicatorPadding: const EdgeInsets.all(4),
-                        labelColor: Colors.white,
-                        unselectedLabelColor: Colors.white.withOpacity(0.7),
-                        labelStyle: const TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 14,
-                        ),
-                        tabs: const [
-                          Tab(text: 'Citizen'),
-                          Tab(text: 'Worker'),
-                          Tab(text: 'Champion'),
-                        ],
-                      ),
-                    ),
-                  ],
+                  ),
                 ),
               ),
               
-              // Content
+              // Training Modules
               Expanded(
                 child: Container(
-                  decoration: const BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.only(
+                  width: double.infinity,
+                  decoration: BoxDecoration(
+                    color: theme.scaffoldBackgroundColor,
+                    borderRadius: const BorderRadius.only(
                       topLeft: Radius.circular(30),
                       topRight: Radius.circular(30),
                     ),
                   ),
-                  child: TabBarView(
-                    controller: _tabController,
-                    children: [
-                      _buildTrainingTab(TrainingType.citizen),
-                      _buildTrainingTab(TrainingType.wasteWorker),
-                      _buildTrainingTab(TrainingType.greenChampion),
-                    ],
+                  child: Consumer2<TrainingProvider, AuthProvider>(
+                    builder: (context, trainingProvider, authProvider, child) {
+                      final user = authProvider.currentUser;
+                      final trainings = trainingProvider.getTrainingsForRole(
+                        user?.role ?? UserRole.wasteProvider
+                      );
+                      
+                      return ListView.builder(
+                        padding: const EdgeInsets.all(20),
+                        itemCount: trainings.length,
+                        itemBuilder: (context, index) {
+                          final training = trainings[index];
+                          final status = trainingProvider.userProgress[training.id] ?? TrainingStatus.notStarted;
+                          
+                          return Container(
+                            margin: const EdgeInsets.only(bottom: 16),
+                            child: EnhancedTrainingCard(
+                              training: training,
+                              status: status,
+                              isMandatory: training.isMandatory,
+                              onStart: () => _startTraining(context, training, trainingProvider, authProvider),
+                            ),
+                          );
+                        },
+                      );
+                    },
                   ),
                 ),
               ),
@@ -341,7 +292,7 @@ class _EnhancedTrainingScreenState extends State<EnhancedTrainingScreen>
           value,
           style: const TextStyle(
             color: Colors.white,
-            fontSize: 16,
+            fontSize: 18,
             fontWeight: FontWeight.bold,
           ),
         ),
@@ -349,114 +300,65 @@ class _EnhancedTrainingScreenState extends State<EnhancedTrainingScreen>
           label,
           style: TextStyle(
             color: Colors.white.withOpacity(0.8),
-            fontSize: 11,
+            fontSize: 12,
           ),
         ),
       ],
     );
   }
 
-  Widget _buildTrainingTab(TrainingType type) {
-    return Consumer2<TrainingProvider, AuthProvider>(
-      builder: (context, trainingProvider, authProvider, child) {
-        final trainings = trainingProvider.getTrainingsForRole(
-          authProvider.currentUser?.role ?? UserRole.wasteProvider
-        ).where((t) => t.type == type).toList();
-        
-        if (trainings.isEmpty) {
-          return Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(
-                  Icons.school_outlined,
-                  size: 64,
-                  color: Colors.grey[400],
-                ),
-                const SizedBox(height: 16),
-                const TranslatedText(
-                  'No training modules available',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.w600,
-                    color: Colors.grey,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                const TranslatedText(
-                  'Training modules for this role will be available soon',
-                  style: TextStyle(
-                    color: Colors.grey,
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-              ],
-            ),
-          );
-        }
-        
-        return ListView.builder(
-          padding: const EdgeInsets.all(24),
-          itemCount: trainings.length,
-          itemBuilder: (context, index) {
-            final training = trainings[index];
-            final status = trainingProvider.userProgress[training.id] ?? TrainingStatus.notStarted;
-            
-            return Container(
-              margin: const EdgeInsets.only(bottom: 20),
-              child: EnhancedTrainingCard(
-                training: training,
-                status: status,
-                isMandatory: training.isMandatory,
-                onStart: () => _startTraining(training),
-              ),
-            );
-          },
-        );
-      },
-    );
+  int _calculateTotalPoints(TrainingProvider trainingProvider, UserRole? role) {
+    final trainings = trainingProvider.getTrainingsForRole(role ?? UserRole.wasteProvider);
+    return trainings
+        .where((t) => trainingProvider.userProgress[t.id] == TrainingStatus.completed)
+        .fold(0, (sum, training) => sum + training.pointsReward);
   }
 
-  void _startTraining(TrainingModel training) {
+  int _getCertificateCount(TrainingProvider trainingProvider) {
+    return trainingProvider.userProgress.values
+        .where((status) => status == TrainingStatus.completed)
+        .length;
+  }
+
+  void _startTraining(
+    BuildContext context,
+    TrainingModel training,
+    TrainingProvider trainingProvider,
+    AuthProvider authProvider,
+  ) {
     Navigator.of(context).push(
       MaterialPageRoute(
         builder: (_) => TrainingModuleScreen(
           training: training,
-          onComplete: (score) => _completeTraining(training, score),
+          onComplete: (score) async {
+            final success = await trainingProvider.completeTraining(
+              authProvider.currentUser!.id,
+              training.id,
+              score,
+            );
+            
+            if (success) {
+              await authProvider.updateUserPoints(training.pointsReward);
+              
+              if (context.mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('Training completed! +${training.pointsReward} points earned'),
+                    backgroundColor: Colors.green,
+                  ),
+                );
+              }
+            }
+          },
         ),
       ),
     );
-  }
-
-  void _completeTraining(TrainingModel training, int score) async {
-    final authProvider = Provider.of<AuthProvider>(context, listen: false);
-    final trainingProvider = Provider.of<TrainingProvider>(context, listen: false);
-    
-    if (authProvider.currentUser != null) {
-      final success = await trainingProvider.completeTraining(
-        authProvider.currentUser!.id,
-        training.id,
-        score,
-      );
-      
-      if (success && mounted) {
-        // Award points
-        await authProvider.updateUserPoints(training.pointsReward);
-        
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Training completed! +${training.pointsReward} points earned'),
-            backgroundColor: Colors.green,
-          ),
-        );
-      }
-    }
   }
 }
 
 class TrainingModuleScreen extends StatefulWidget {
   final TrainingModel training;
-  final Function(int) onComplete;
+  final Function(int score) onComplete;
 
   const TrainingModuleScreen({
     super.key,
@@ -468,338 +370,233 @@ class TrainingModuleScreen extends StatefulWidget {
   State<TrainingModuleScreen> createState() => _TrainingModuleScreenState();
 }
 
-class _TrainingModuleScreenState extends State<TrainingModuleScreen>
-    with TickerProviderStateMixin {
+class _TrainingModuleScreenState extends State<TrainingModuleScreen> {
   int _currentStep = 0;
-  int _totalSteps = 5;
-  int _quizScore = 0;
-  bool _interactiveCompleted = false;
-  
-  late AnimationController _stepAnimationController;
-  late Animation<double> _stepAnimation;
-
-  @override
-  void initState() {
-    super.initState();
-    _stepAnimationController = AnimationController(
-      duration: const Duration(milliseconds: 800),
-      vsync: this,
-    );
-    _stepAnimation = Tween<double>(
-      begin: 0.0,
-      end: 1.0,
-    ).animate(CurvedAnimation(
-      parent: _stepAnimationController,
-      curve: Curves.easeOutBack,
-    ));
-    
-    _stepAnimationController.forward();
-  }
-
-  @override
-  void dispose() {
-    _stepAnimationController.dispose();
-    super.dispose();
-  }
+  int _score = 0;
+  final int _totalSteps = 4;
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    
     return Scaffold(
+      appBar: AppBar(
+        title: TranslatedText(
+          widget.training.title,
+          style: theme.appBarTheme.titleTextStyle,
+        ),
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        iconTheme: IconThemeData(color: theme.appBarTheme.foregroundColor),
+        actions: [
+          LanguageSelector(
+            iconColor: theme.appBarTheme.foregroundColor,
+            backgroundColor: theme.cardColor,
+          ),
+        ],
+      ),
       body: Container(
-        decoration: const BoxDecoration(
+        decoration: BoxDecoration(
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
             colors: [
-              Color(0xFF3B82F6),
-              Color(0xFF1D4ED8),
+              const Color(0xFF3B82F6),
+              const Color(0xFF1D4ED8),
+              if (theme.brightness == Brightness.dark) const Color(0xFF1E293B) else const Color(0xFF1E40AF),
             ],
           ),
         ),
-        child: SafeArea(
-          child: Column(
-            children: [
-              // Progress Header
-              Padding(
-                padding: const EdgeInsets.all(24),
-                child: Column(
-                  children: [
-                    Row(
-                      children: [
-                        IconButton(
-                          onPressed: () => Navigator.of(context).pop(),
-                          icon: const Icon(
-                            Icons.arrow_back,
-                            color: Colors.white,
-                          ),
+        child: Column(
+          children: [
+            // Progress Header
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(20),
+              child: Column(
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        'Step ${_currentStep + 1} of $_totalSteps',
+                        style: TextStyle(
+                          color: Colors.white.withOpacity(0.9),
+                          fontSize: 14,
                         ),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: TranslatedText(
-                            widget.training.title,
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 20,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ),
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                          decoration: BoxDecoration(
-                            color: Colors.white.withOpacity(0.2),
-                            borderRadius: BorderRadius.circular(20),
-                          ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              const Icon(
-                                Icons.stars,
-                                color: Colors.yellow,
-                                size: 16,
-                              ),
-                              const SizedBox(width: 4),
-                              Text(
-                                '${widget.training.pointsReward}',
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                    
-                    const SizedBox(height: 16),
-                    
-                    // Progress Indicator
-                    Container(
-                      padding: const EdgeInsets.all(16),
-                      decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(16),
                       ),
-                      child: Column(
+                      Text(
+                        '${((_currentStep + 1) / _totalSteps * 100).round()}%',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  LinearProgressIndicator(
+                    value: (_currentStep + 1) / _totalSteps,
+                    backgroundColor: Colors.white.withOpacity(0.3),
+                    valueColor: const AlwaysStoppedAnimation<Color>(Colors.yellow),
+                    minHeight: 6,
+                  ),
+                ],
+              ),
+            ),
+            
+            // Content
+            Expanded(
+              child: Container(
+                width: double.infinity,
+                decoration: BoxDecoration(
+                  color: theme.scaffoldBackgroundColor,
+                  borderRadius: const BorderRadius.only(
+                    topLeft: Radius.circular(30),
+                    topRight: Radius.circular(30),
+                  ),
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.all(20),
+                  child: Column(
+                    children: [
+                      Expanded(
+                        child: _buildStepContent(),
+                      ),
+                      
+                      const SizedBox(height: 20),
+                      
+                      // Navigation Buttons
+                      Row(
                         children: [
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              TranslatedText(
-                                'Step ${_currentStep + 1} of $_totalSteps',
-                                style: TextStyle(
-                                  color: Colors.white.withOpacity(0.9),
-                                  fontSize: 14,
+                          if (_currentStep > 0)
+                            Expanded(
+                              child: OutlinedButton(
+                                onPressed: () {
+                                  setState(() {
+                                    _currentStep--;
+                                  });
+                                },
+                                style: OutlinedButton.styleFrom(
+                                  padding: const EdgeInsets.symmetric(vertical: 16),
+                                  side: BorderSide(color: theme.primaryColor),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                ),
+                                child: TranslatedText(
+                                  'Previous',
+                                  style: TextStyle(color: theme.primaryColor),
                                 ),
                               ),
-                              Text(
-                                '${((_currentStep + 1) / _totalSteps * 100).round()}%',
+                            ),
+                          
+                          if (_currentStep > 0) const SizedBox(width: 16),
+                          
+                          Expanded(
+                            child: ElevatedButton(
+                              onPressed: () {
+                                if (_currentStep < _totalSteps - 1) {
+                                  setState(() {
+                                    _currentStep++;
+                                  });
+                                } else {
+                                  widget.onComplete(_score);
+                                  Navigator.of(context).pop();
+                                }
+                              },
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: theme.primaryColor,
+                                foregroundColor: Colors.white,
+                                padding: const EdgeInsets.symmetric(vertical: 16),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                              ),
+                              child: TranslatedText(
+                                _currentStep < _totalSteps - 1 
+                                    ? 'Next' 
+                                    : 'Complete (+${widget.training.pointsReward} points)',
                                 style: const TextStyle(
-                                  color: Colors.white,
+                                  fontSize: 16,
                                   fontWeight: FontWeight.bold,
+                                  color: Colors.white,
                                 ),
                               ),
-                            ],
-                          ),
-                          const SizedBox(height: 8),
-                          LinearProgressIndicator(
-                            value: (_currentStep + 1) / _totalSteps,
-                            backgroundColor: Colors.white.withOpacity(0.3),
-                            valueColor: const AlwaysStoppedAnimation<Color>(Colors.yellow),
-                            minHeight: 6,
+                            ),
                           ),
                         ],
                       ),
-                    ),
-                  ],
-                ),
-              ),
-              
-              // Content
-              Expanded(
-                child: Container(
-                  decoration: const BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.only(
-                      topLeft: Radius.circular(30),
-                      topRight: Radius.circular(30),
-                    ),
-                  ),
-                  child: AnimatedBuilder(
-                    animation: _stepAnimation,
-                    builder: (context, child) {
-                      return Transform.translate(
-                        offset: Offset(0, (1 - _stepAnimation.value) * 50),
-                        child: Opacity(
-                          opacity: _stepAnimation.value,
-                          child: Padding(
-                            padding: const EdgeInsets.all(24),
-                            child: Column(
-                              children: [
-                                Expanded(
-                                  child: _buildStepContent(),
-                                ),
-                                
-                                // Navigation Buttons
-                                Row(
-                                  children: [
-                                    if (_currentStep > 0)
-                                      Expanded(
-                                        child: OutlinedButton.icon(
-                                          onPressed: () {
-                                            setState(() {
-                                              _currentStep--;
-                                            });
-                                            _stepAnimationController.reset();
-                                            _stepAnimationController.forward();
-                                          },
-                                          icon: const Icon(Icons.arrow_back),
-                                          label: const TranslatedText('Previous'),
-                                          style: OutlinedButton.styleFrom(
-                                            padding: const EdgeInsets.symmetric(vertical: 16),
-                                            side: const BorderSide(color: Color(0xFF3B82F6)),
-                                            shape: RoundedRectangleBorder(
-                                              borderRadius: BorderRadius.circular(12),
-                                            ),
-                                          ),
-                                        ),
-                                      ),
-                                    
-                                    if (_currentStep > 0) const SizedBox(width: 16),
-                                    
-                                    Expanded(
-                                      child: ElevatedButton.icon(
-                                        onPressed: _canProceed() ? () {
-                                          if (_currentStep < _totalSteps - 1) {
-                                            setState(() {
-                                              _currentStep++;
-                                            });
-                                            _stepAnimationController.reset();
-                                            _stepAnimationController.forward();
-                                          } else {
-                                            _completeTraining();
-                                          }
-                                        } : null,
-                                        icon: Icon(
-                                          _currentStep < _totalSteps - 1 
-                                              ? Icons.arrow_forward 
-                                              : Icons.check,
-                                        ),
-                                        label: TranslatedText(
-                                          _currentStep < _totalSteps - 1 
-                                              ? 'Next' 
-                                              : 'Complete Training',
-                                        ),
-                                        style: ElevatedButton.styleFrom(
-                                          backgroundColor: const Color(0xFF10B981),
-                                          foregroundColor: Colors.white,
-                                          padding: const EdgeInsets.symmetric(vertical: 16),
-                                          shape: RoundedRectangleBorder(
-                                            borderRadius: BorderRadius.circular(12),
-                                          ),
-                                        ),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                      );
-                    },
+                    ],
                   ),
                 ),
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );
   }
 
   Widget _buildStepContent() {
+    final theme = Theme.of(context);
+    
     switch (_currentStep) {
       case 0:
-        return _buildIntroStep();
+        return _buildIntroStep(theme);
       case 1:
-        return _buildVideoStep();
+        return _buildVideoStep(theme);
       case 2:
-        return _buildInteractiveStep();
+        return _buildInteractiveStep(theme);
       case 3:
-        return _buildQuizStep();
-      case 4:
-        return _buildCertificationStep();
+        return _buildQuizStep(theme);
       default:
         return const SizedBox.shrink();
     }
   }
 
-  Widget _buildIntroStep() {
+  Widget _buildIntroStep(ThemeData theme) {
     return SingleChildScrollView(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const TranslatedText(
-            'Training Overview',
-            style: TextStyle(
-              fontSize: 24,
+          TranslatedText(
+            'Module Overview',
+            style: theme.textTheme.headlineSmall?.copyWith(
               fontWeight: FontWeight.bold,
+              color: theme.textTheme.headlineSmall?.color,
             ),
           ),
           const SizedBox(height: 16),
           
           Container(
+            width: double.infinity,
             padding: const EdgeInsets.all(20),
             decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [Colors.blue[50]!, Colors.blue[100]!],
-              ),
+              color: theme.primaryColor.withOpacity(0.1),
               borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: Colors.blue[200]!),
+              border: Border.all(color: theme.primaryColor.withOpacity(0.3)),
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Row(
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.all(8),
-                      decoration: BoxDecoration(
-                        color: Colors.blue[600],
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: const Icon(
-                        Icons.info,
-                        color: Colors.white,
-                        size: 20,
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: TranslatedText(
-                        widget.training.description,
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                          color: Colors.blue[800],
-                          height: 1.4,
-                        ),
-                      ),
-                    ),
-                  ],
+                TranslatedText(
+                  widget.training.description,
+                  style: TextStyle(
+                    fontSize: 16,
+                    height: 1.5,
+                    color: theme.textTheme.bodyLarge?.color,
+                  ),
                 ),
-                
                 const SizedBox(height: 16),
                 
-                Row(
+                Wrap(
+                  spacing: 12,
+                  runSpacing: 8,
                   children: [
-                    _buildInfoChip(Icons.access_time, '${widget.training.duration} min'),
-                    const SizedBox(width: 12),
-                    _buildInfoChip(Icons.signal_cellular_alt, widget.training.difficulty),
-                    const SizedBox(width: 12),
-                    _buildInfoChip(Icons.stars, '${widget.training.pointsReward} points'),
+                    _buildInfoChip(Icons.access_time, '${widget.training.duration} min', Colors.orange, theme),
+                    _buildInfoChip(Icons.signal_cellular_alt, widget.training.difficulty, Colors.purple, theme),
+                    _buildInfoChip(Icons.stars, '${widget.training.pointsReward} points', Colors.yellow[700]!, theme),
                   ],
                 ),
               ],
@@ -808,11 +605,11 @@ class _TrainingModuleScreenState extends State<TrainingModuleScreen>
           
           const SizedBox(height: 24),
           
-          const TranslatedText(
-            'Learning Objectives',
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
+          TranslatedText(
+            'What You\'ll Learn',
+            style: theme.textTheme.titleLarge?.copyWith(
+              fontWeight: FontWeight.w600,
+              color: theme.textTheme.titleLarge?.color,
             ),
           ),
           const SizedBox(height: 12),
@@ -820,19 +617,13 @@ class _TrainingModuleScreenState extends State<TrainingModuleScreen>
           ...widget.training.modules.map((module) {
             return Container(
               margin: const EdgeInsets.only(bottom: 8),
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: Colors.green[50],
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: Colors.green[200]!),
-              ),
               child: Row(
                 children: [
                   Container(
-                    width: 8,
-                    height: 8,
-                    decoration: const BoxDecoration(
-                      color: Color(0xFF10B981),
+                    width: 6,
+                    height: 6,
+                    decoration: BoxDecoration(
+                      color: theme.primaryColor,
                       shape: BoxShape.circle,
                     ),
                   ),
@@ -842,8 +633,7 @@ class _TrainingModuleScreenState extends State<TrainingModuleScreen>
                       module,
                       style: TextStyle(
                         fontSize: 14,
-                        fontWeight: FontWeight.w500,
-                        color: Colors.green[800],
+                        color: theme.textTheme.bodyMedium?.color,
                       ),
                     ),
                   ),
@@ -851,111 +641,55 @@ class _TrainingModuleScreenState extends State<TrainingModuleScreen>
               ),
             );
           }).toList(),
-          
-          if (widget.training.isMandatory) ...[
-            const SizedBox(height: 20),
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: Colors.red[50],
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: Colors.red[200]!),
-              ),
-              child: const Row(
-                children: [
-                  Icon(
-                    Icons.priority_high,
-                    color: Colors.red,
-                    size: 20,
-                  ),
-                  SizedBox(width: 12),
-                  Expanded(
-                    child: TranslatedText(
-                      'This is a mandatory training module. You must complete it to access all app features.',
-                      style: TextStyle(
-                        color: Colors.red,
-                        fontSize: 14,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
         ],
       ),
     );
   }
 
-  Widget _buildVideoStep() {
+  Widget _buildVideoStep(ThemeData theme) {
     return SingleChildScrollView(
       child: Column(
         children: [
-          const TranslatedText(
+          TranslatedText(
             'Training Video',
-            style: TextStyle(
-              fontSize: 24,
+            style: theme.textTheme.headlineSmall?.copyWith(
               fontWeight: FontWeight.bold,
+              color: theme.textTheme.headlineSmall?.color,
             ),
           ),
           const SizedBox(height: 24),
           
           Container(
             width: double.infinity,
-            height: 250,
+            height: 200,
             decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [Colors.grey[200]!, Colors.grey[300]!],
-              ),
+              color: theme.cardColor,
               borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: Colors.grey[400]!),
+              border: Border.all(color: theme.dividerColor),
             ),
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF3B82F6),
-                    borderRadius: BorderRadius.circular(50),
-                  ),
-                  child: const Icon(
-                    Icons.play_arrow,
-                    size: 48,
-                    color: Colors.white,
-                  ),
+                Icon(
+                  Icons.play_circle_fill,
+                  size: 64,
+                  color: theme.primaryColor,
                 ),
-                const SizedBox(height: 16),
-                const TranslatedText(
-                  'Training Video Content',
+                const SizedBox(height: 12),
+                TranslatedText(
+                  'Interactive Training Video',
                   style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                    color: theme.textTheme.titleMedium?.color,
                   ),
                 ),
-                const SizedBox(height: 8),
-                const TranslatedText(
-                  'Video content would be embedded here',
+                const SizedBox(height: 4),
+                TranslatedText(
+                  'Watch and learn waste management techniques',
                   style: TextStyle(
-                    color: Colors.grey,
-                    fontSize: 14,
-                  ),
-                ),
-                const SizedBox(height: 16),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                  decoration: BoxDecoration(
-                    color: Colors.blue[100],
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: Text(
-                    'Duration: ${widget.training.duration} minutes',
-                    style: TextStyle(
-                      color: Colors.blue[800],
-                      fontWeight: FontWeight.w600,
-                      fontSize: 12,
-                    ),
+                    color: theme.textTheme.bodySmall?.color,
+                    fontSize: 12,
                   ),
                 ),
               ],
@@ -965,23 +699,24 @@ class _TrainingModuleScreenState extends State<TrainingModuleScreen>
           const SizedBox(height: 24),
           
           Container(
+            width: double.infinity,
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
               color: Colors.yellow[50],
               borderRadius: BorderRadius.circular(12),
               border: Border.all(color: Colors.yellow[200]!),
             ),
-            child: const Row(
+            child: Row(
               children: [
                 Icon(
                   Icons.lightbulb,
-                  color: Colors.orange,
+                  color: Colors.orange[600],
                   size: 20,
                 ),
-                SizedBox(width: 12),
-                Expanded(
+                const SizedBox(width: 12),
+                const Expanded(
                   child: TranslatedText(
-                    'Watch the complete video to proceed to the interactive exercises',
+                    'Watch the complete video to proceed to the next step',
                     style: TextStyle(
                       color: Colors.orange,
                       fontSize: 14,
@@ -997,392 +732,166 @@ class _TrainingModuleScreenState extends State<TrainingModuleScreen>
     );
   }
 
-  Widget _buildInteractiveStep() {
+  Widget _buildInteractiveStep(ThemeData theme) {
     return SingleChildScrollView(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const TranslatedText(
+          TranslatedText(
             'Interactive Practice',
-            style: TextStyle(
-              fontSize: 24,
+            style: theme.textTheme.headlineSmall?.copyWith(
               fontWeight: FontWeight.bold,
+              color: theme.textTheme.headlineSmall?.color,
             ),
           ),
           const SizedBox(height: 16),
           
-          const TranslatedText(
-            'Practice what you\'ve learned with hands-on exercises:',
+          TranslatedText(
+            'Practice what you\'ve learned with this interactive exercise:',
             style: TextStyle(
-              color: Colors.grey,
-              fontSize: 16,
+              color: theme.textTheme.bodyMedium?.color,
+              fontSize: 14,
             ),
           ),
           
           const SizedBox(height: 24),
           
-          // Interactive Exercise based on training type
-          if (widget.training.id.contains('segregation'))
-            InteractiveSegregationWidget(
-              onComplete: () {
-                setState(() {
-                  _interactiveCompleted = true;
-                });
-              },
-            )
-          else if (widget.training.id.contains('composting'))
-            CompostingSimulatorWidget(
-              onComplete: () {
-                setState(() {
-                  _interactiveCompleted = true;
-                });
-              },
-            )
-          else if (widget.training.id.contains('plastic'))
-            PlasticReuseGalleryWidget(
-              onComplete: () {
-                setState(() {
-                  _interactiveCompleted = true;
-                });
-              },
-            )
-          else
-            // Default interactive content
-            Container(
-              padding: const EdgeInsets.all(24),
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [Colors.green[100]!, Colors.green[50]!],
-                ),
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: Colors.green[200]!),
-              ),
-              child: Column(
-                children: [
-                  Icon(
-                    Icons.touch_app,
-                    size: 64,
-                    color: Colors.green[600],
-                  ),
-                  const SizedBox(height: 16),
-                  TranslatedText(
-                    'Interactive Exercise',
-                    style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.green[800],
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  TranslatedText(
-                    'Complete the interactive exercise to proceed',
-                    style: TextStyle(
-                      color: Colors.green[700],
-                      fontSize: 14,
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
-                  const SizedBox(height: 20),
-                  ElevatedButton(
-                    onPressed: () {
-                      setState(() {
-                        _interactiveCompleted = true;
-                      });
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.green[600],
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                    ),
-                    child: const TranslatedText('Mark as Completed'),
-                  ),
-                ],
-              ),
-            ),
+          InteractiveSegregationWidget(
+            onComplete: () {
+              setState(() {
+                _score += 20;
+              });
+            },
+          ),
         ],
       ),
     );
   }
 
-  Widget _buildQuizStep() {
-    final questions = widget.training.quizData['questions'] as List<dynamic>? ?? [];
-    
+  Widget _buildQuizStep(ThemeData theme) {
     return SingleChildScrollView(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const TranslatedText(
-            'Knowledge Assessment',
-            style: TextStyle(
-              fontSize: 24,
+          TranslatedText(
+            'Knowledge Check',
+            style: theme.textTheme.headlineSmall?.copyWith(
               fontWeight: FontWeight.bold,
+              color: theme.textTheme.headlineSmall?.color,
             ),
           ),
           const SizedBox(height: 16),
           
-          const TranslatedText(
-            'Answer these questions to test your understanding:',
+          TranslatedText(
+            'Answer these questions to complete the module:',
             style: TextStyle(
-              color: Colors.grey,
-              fontSize: 16,
+              color: theme.textTheme.bodyMedium?.color,
+              fontSize: 14,
             ),
           ),
           
           const SizedBox(height: 24),
           
-          if (questions.isNotEmpty)
-            ...questions.asMap().entries.map((entry) {
-              final index = entry.key;
-              final question = entry.value;
-              
-              return Container(
-                margin: const EdgeInsets.only(bottom: 20),
-                padding: const EdgeInsets.all(20),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: Colors.grey[200]!),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.grey.withOpacity(0.1),
-                      blurRadius: 8,
-                      offset: const Offset(0, 4),
-                    ),
-                  ],
-                ),
-                child: _buildQuizQuestion(question, index),
-              );
-            }).toList()
-          else
-            Container(
-              padding: const EdgeInsets.all(24),
-              decoration: BoxDecoration(
-                color: Colors.blue[50],
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: Colors.blue[200]!),
-              ),
-              child: const Column(
-                children: [
-                  Icon(
-                    Icons.quiz,
-                    size: 48,
-                    color: Colors.blue,
-                  ),
-                  SizedBox(height: 16),
-                  TranslatedText(
-                    'Quiz questions will be available here',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                      color: Colors.blue,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildQuizQuestion(Map<String, dynamic> question, int questionIndex) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          'Question ${questionIndex + 1}',
-          style: TextStyle(
-            color: Colors.grey[600],
-            fontSize: 12,
-            fontWeight: FontWeight.w500,
-          ),
-        ),
-        const SizedBox(height: 8),
-        
-        TranslatedText(
-          question['question'],
-          style: const TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-        
-        const SizedBox(height: 16),
-        
-        ...List.generate(question['options'].length, (optionIndex) {
-          final option = question['options'][optionIndex];
-          
-          return Container(
-            margin: const EdgeInsets.only(bottom: 8),
-            child: InkWell(
-              onTap: () {
-                // Handle answer selection
-                if (optionIndex == question['correct']) {
-                  _quizScore += 10;
-                }
-              },
-              borderRadius: BorderRadius.circular(8),
-              child: Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  border: Border.all(color: Colors.grey[300]!),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Row(
-                  children: [
-                    Container(
-                      width: 20,
-                      height: 20,
-                      decoration: BoxDecoration(
-                        border: Border.all(color: Colors.grey[400]!),
-                        shape: BoxShape.circle,
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: TranslatedText(option),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          );
-        }),
-        
-        if (question['explanation'] != null) ...[
-          const SizedBox(height: 12),
+          // Sample Quiz Question
           Container(
-            padding: const EdgeInsets.all(12),
+            width: double.infinity,
+            padding: const EdgeInsets.all(20),
             decoration: BoxDecoration(
-              color: Colors.yellow[50],
-              borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: Colors.yellow[200]!),
-            ),
-            child: Row(
-              children: [
-                Icon(
-                  Icons.lightbulb,
-                  color: Colors.yellow[700],
-                  size: 16,
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: TranslatedText(
-                    question['explanation'],
-                    style: TextStyle(
-                      color: Colors.yellow[800],
-                      fontSize: 12,
-                    ),
-                  ),
+              color: theme.cardColor,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: theme.dividerColor),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.grey.withOpacity(0.1),
+                  blurRadius: 8,
+                  offset: const Offset(0, 4),
                 ),
               ],
             ),
-          ),
-        ],
-      ],
-    );
-  }
-
-  Widget _buildCertificationStep() {
-    final finalScore = _quizScore + (_interactiveCompleted ? 20 : 0);
-    final passed = finalScore >= 60;
-    
-    return Column(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        Icon(
-          passed ? Icons.emoji_events : Icons.sentiment_satisfied,
-          size: 80,
-          color: passed ? Colors.yellow[600] : Colors.grey[600],
-        ),
-        const SizedBox(height: 24),
-        
-        TranslatedText(
-          passed ? 'Congratulations!' : 'Good Effort!',
-          style: const TextStyle(
-            fontSize: 28,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        
-        const SizedBox(height: 16),
-        
-        Text(
-          'Final Score: $finalScore/100',
-          style: const TextStyle(
-            fontSize: 20,
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-        
-        const SizedBox(height: 8),
-        
-        TranslatedText(
-          passed 
-              ? 'You have successfully completed the training!'
-              : 'You can retake the training to improve your score.',
-          style: TextStyle(
-            fontSize: 16,
-            color: Colors.grey[600],
-          ),
-          textAlign: TextAlign.center,
-        ),
-        
-        const SizedBox(height: 32),
-        
-        if (passed) ...[
-          Container(
-            padding: const EdgeInsets.all(20),
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [Colors.green[100]!, Colors.green[50]!],
-              ),
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: Colors.green[200]!),
-            ),
             child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Icon(
-                  Icons.verified,
-                  size: 48,
-                  color: Colors.green[600],
-                ),
-                const SizedBox(height: 12),
-                TranslatedText(
-                  'Certificate Earned!',
+                Text(
+                  'Question 1 of 3',
                   style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.green[800],
+                    color: theme.textTheme.bodySmall?.color,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w500,
                   ),
                 ),
                 const SizedBox(height: 8),
-                TranslatedText(
-                  'Your digital certificate will be available in your profile',
+                
+                const TranslatedText(
+                  'Which bin should you use for banana peels?',
                   style: TextStyle(
-                    color: Colors.green[700],
-                    fontSize: 14,
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
                   ),
-                  textAlign: TextAlign.center,
                 ),
+                
+                const SizedBox(height: 16),
+                
+                ...['Blue (Dry)', 'Green (Wet)', 'Red (Hazardous)', 'Any bin'].asMap().entries.map((entry) {
+                  final index = entry.key;
+                  final option = entry.value;
+                  final isCorrect = index == 1; // Green (Wet) is correct
+                  
+                  return Container(
+                    width: double.infinity,
+                    margin: const EdgeInsets.only(bottom: 8),
+                    child: InkWell(
+                      onTap: () {
+                        setState(() {
+                          if (isCorrect) _score += 10;
+                        });
+                      },
+                      borderRadius: BorderRadius.circular(8),
+                      child: Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          border: Border.all(color: theme.dividerColor),
+                          borderRadius: BorderRadius.circular(8),
+                          color: theme.cardColor,
+                        ),
+                        child: Row(
+                          children: [
+                            Container(
+                              width: 20,
+                              height: 20,
+                              decoration: BoxDecoration(
+                                border: Border.all(color: theme.dividerColor),
+                                shape: BoxShape.circle,
+                                color: theme.cardColor,
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            TranslatedText(
+                              option,
+                              style: TextStyle(
+                                color: theme.textTheme.bodyMedium?.color,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  );
+                }).toList(),
               ],
             ),
           ),
         ],
-      ],
+      ),
     );
   }
 
-  Widget _buildInfoChip(IconData icon, String text) {
+  Widget _buildInfoChip(IconData icon, String text, Color color, ThemeData theme) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: color.withOpacity(0.1),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.blue[200]!),
+        border: Border.all(color: color.withOpacity(0.3)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -1390,13 +899,13 @@ class _TrainingModuleScreenState extends State<TrainingModuleScreen>
           Icon(
             icon,
             size: 14,
-            color: Colors.blue[600],
+            color: color,
           ),
           const SizedBox(width: 4),
           Text(
             text,
             style: TextStyle(
-              color: Colors.blue[600],
+              color: color,
               fontSize: 12,
               fontWeight: FontWeight.w600,
             ),
@@ -1404,27 +913,5 @@ class _TrainingModuleScreenState extends State<TrainingModuleScreen>
         ],
       ),
     );
-  }
-
-  bool _canProceed() {
-    switch (_currentStep) {
-      case 0:
-        return true; // Can always proceed from intro
-      case 1:
-        return true; // Video step - assume watched
-      case 2:
-        return _interactiveCompleted;
-      case 3:
-        return _quizScore > 0; // At least attempted quiz
-      case 4:
-        return true; // Certification step
-      default:
-        return false;
-    }
-  }
-
-  void _completeTraining() {
-    final finalScore = _quizScore + (_interactiveCompleted ? 20 : 0);
-    widget.onComplete(finalScore);
   }
 }

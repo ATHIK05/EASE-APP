@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../models/user_model.dart';
+import '../providers/language_provider.dart';
 
 class BottomNavBar extends StatelessWidget {
   final int currentIndex;
@@ -15,55 +17,58 @@ class BottomNavBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final languageProvider = Provider.of<LanguageProvider>(context);
+    
     List<BottomNavigationBarItem> items;
     
     if (userRole == UserRole.wasteProvider) {
       items = [
-        const BottomNavigationBarItem(
-          icon: Icon(Icons.home),
-          label: 'Home',
+        BottomNavigationBarItem(
+          icon: const Icon(Icons.home),
+          label: languageProvider.translate('Home'),
         ),
-        const BottomNavigationBarItem(
-          icon: Icon(Icons.school),
-          label: 'Training',
+        BottomNavigationBarItem(
+          icon: const Icon(Icons.school),
+          label: languageProvider.translate('Training'),
         ),
-        const BottomNavigationBarItem(
-          icon: Icon(Icons.camera_alt),
-          label: 'Report',
+        BottomNavigationBarItem(
+          icon: const Icon(Icons.camera_alt),
+          label: languageProvider.translate('Report'),
         ),
-        const BottomNavigationBarItem(
-          icon: Icon(Icons.location_on),
-          label: 'Facilities',
+        BottomNavigationBarItem(
+          icon: const Icon(Icons.location_on),
+          label: languageProvider.translate('Facilities'),
         ),
-        const BottomNavigationBarItem(
-          icon: Icon(Icons.person),
-          label: 'Profile',
+        BottomNavigationBarItem(
+          icon: const Icon(Icons.person),
+          label: languageProvider.translate('Profile'),
         ),
       ];
     } else {
       items = [
-        const BottomNavigationBarItem(
-          icon: Icon(Icons.dashboard),
-          label: 'Dashboard',
+        BottomNavigationBarItem(
+          icon: const Icon(Icons.dashboard),
+          label: languageProvider.translate('Dashboard'),
         ),
-        const BottomNavigationBarItem(
-          icon: Icon(Icons.assignment),
-          label: 'Reports',
+        BottomNavigationBarItem(
+          icon: const Icon(Icons.assignment),
+          label: languageProvider.translate('Reports'),
         ),
-        const BottomNavigationBarItem(
-          icon: Icon(Icons.map),
-          label: 'Map',
+        BottomNavigationBarItem(
+          icon: const Icon(Icons.map),
+          label: languageProvider.translate('Map'),
         ),
-        const BottomNavigationBarItem(
-          icon: Icon(Icons.person),
-          label: 'Profile',
+        BottomNavigationBarItem(
+          icon: const Icon(Icons.person),
+          label: languageProvider.translate('Profile'),
         ),
       ];
     }
 
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: theme.bottomNavigationBarTheme.backgroundColor ?? theme.cardColor,
         boxShadow: [
           BoxShadow(
             color: Colors.grey.withOpacity(0.2),
@@ -76,13 +81,20 @@ class BottomNavBar extends StatelessWidget {
         currentIndex: currentIndex,
         onTap: onTap,
         type: BottomNavigationBarType.fixed,
-        backgroundColor: Colors.white,
-        selectedItemColor: const Color(0xFF10B981),
-        unselectedItemColor: Colors.grey[600],
+        backgroundColor: theme.bottomNavigationBarTheme.backgroundColor ?? theme.cardColor,
+        selectedItemColor: theme.primaryColor,
+        unselectedItemColor: theme.iconTheme.color?.withOpacity(0.6),
         selectedFontSize: 12,
         unselectedFontSize: 12,
         elevation: 0,
         items: items,
+        selectedLabelStyle: TextStyle(
+          fontWeight: FontWeight.w600,
+          color: theme.primaryColor,
+        ),
+        unselectedLabelStyle: TextStyle(
+          color: theme.iconTheme.color?.withOpacity(0.6),
+        ),
       ),
     );
   }

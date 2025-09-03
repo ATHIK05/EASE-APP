@@ -4,8 +4,10 @@ import 'package:geolocator/geolocator.dart';
 import 'package:geocoding/geocoding.dart';
 import '../../providers/waste_provider.dart';
 import '../../providers/auth_provider.dart';
+import '../../providers/language_provider.dart';
 import '../../models/waste_report_model.dart';
 import '../../widgets/translated_text.dart';
+import '../../widgets/language_selector.dart';
 
 class EnhancedReportScreen extends StatefulWidget {
   const EnhancedReportScreen({super.key});
@@ -231,6 +233,9 @@ class _EnhancedReportScreenState extends State<EnhancedReportScreen>
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    
     return Scaffold(
       body: Container(
         decoration: const BoxDecoration(
@@ -253,7 +258,7 @@ class _EnhancedReportScreenState extends State<EnhancedReportScreen>
                 child: SlideTransition(
                   position: _slideAnimation,
                   child: Padding(
-                    padding: const EdgeInsets.all(24),
+                    padding: const EdgeInsets.all(20),
                     child: Column(
                       children: [
                         Row(
@@ -266,7 +271,7 @@ class _EnhancedReportScreenState extends State<EnhancedReportScreen>
                                 size: 28,
                               ),
                             ),
-                            const SizedBox(width: 8),
+                            const SizedBox(width: 12),
                             Container(
                               padding: const EdgeInsets.all(16),
                               decoration: BoxDecoration(
@@ -284,35 +289,40 @@ class _EnhancedReportScreenState extends State<EnhancedReportScreen>
                               ),
                             ),
                             const SizedBox(width: 16),
-                            const Expanded(
+                            Expanded(
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  TranslatedText(
+                                  const TranslatedText(
                                     'Report Waste Issue',
                                     style: TextStyle(
                                       color: Colors.white,
-                                      fontSize: 24,
+                                      fontSize: 20,
                                       fontWeight: FontWeight.bold,
                                     ),
                                   ),
-                                  TranslatedText(
+                                  const TranslatedText(
                                     'Help keep India clean',
                                     style: TextStyle(
                                       color: Colors.white70,
-                                      fontSize: 16,
+                                      fontSize: 14,
                                     ),
                                   ),
                                 ],
                               ),
                             ),
+                            LanguageSelector(
+                              iconColor: Colors.white,
+                              backgroundColor: theme.cardColor,
+                            ),
                           ],
                         ),
                         
-                        const SizedBox(height: 20),
+                        const SizedBox(height: 16),
                         
                         // Impact Stats
                         Container(
+                          width: double.infinity,
                           padding: const EdgeInsets.all(20),
                           decoration: BoxDecoration(
                             color: Colors.white.withOpacity(0.15),
@@ -355,15 +365,16 @@ class _EnhancedReportScreenState extends State<EnhancedReportScreen>
               // Form Content
               Expanded(
                 child: Container(
-                  decoration: const BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.only(
+                  width: double.infinity,
+                  decoration: BoxDecoration(
+                    color: theme.scaffoldBackgroundColor,
+                    borderRadius: const BorderRadius.only(
                       topLeft: Radius.circular(30),
                       topRight: Radius.circular(30),
                     ),
                   ),
                   child: SingleChildScrollView(
-                    padding: const EdgeInsets.all(24),
+                    padding: const EdgeInsets.all(20),
                     child: FadeTransition(
                       opacity: _fadeAnimation,
                       child: Form(
@@ -372,18 +383,19 @@ class _EnhancedReportScreenState extends State<EnhancedReportScreen>
                           crossAxisAlignment: CrossAxisAlignment.stretch,
                           children: [
                             // Drive Links Section
-                            const TranslatedText(
+                            TranslatedText(
                               'Photo/Video Evidence',
                               style: TextStyle(
                                 fontSize: 18,
                                 fontWeight: FontWeight.bold,
+                                color: theme.textTheme.headlineSmall?.color,
                               ),
                             ),
                             const SizedBox(height: 8),
-                            const TranslatedText(
+                            TranslatedText(
                               'Share Google Drive links to photos/videos (one per line)',
                               style: TextStyle(
-                                color: Colors.grey,
+                                color: theme.textTheme.bodySmall?.color,
                                 fontSize: 14,
                               ),
                             ),
@@ -391,25 +403,38 @@ class _EnhancedReportScreenState extends State<EnhancedReportScreen>
                             
                             Container(
                               decoration: BoxDecoration(
-                                color: Colors.blue[50],
+                                color: theme.brightness == Brightness.dark 
+                                    ? Colors.blue[900]?.withOpacity(0.2)
+                                    : Colors.blue[50],
                                 borderRadius: BorderRadius.circular(12),
-                                border: Border.all(color: Colors.blue[200]!),
+                                border: Border.all(
+                                  color: theme.brightness == Brightness.dark 
+                                      ? Colors.blue[400]!
+                                      : Colors.blue[200]!,
+                                ),
                               ),
                               child: TextFormField(
                                 controller: _driveLinksController,
                                 maxLines: 4,
-                                decoration: const InputDecoration(
+                                style: TextStyle(color: theme.textTheme.bodyLarge?.color),
+                                decoration: InputDecoration(
                                   hintText: 'https://drive.google.com/file/d/...\nhttps://drive.google.com/file/d/...',
                                   prefixIcon: Padding(
                                     padding: EdgeInsets.only(top: 12),
-                                    child: Icon(Icons.link),
+                                    child: Icon(
+                                      Icons.link,
+                                      color: theme.iconTheme.color,
+                                    ),
                                   ),
                                   border: InputBorder.none,
                                   contentPadding: EdgeInsets.all(16),
+                                  hintStyle: TextStyle(
+                                    color: theme.textTheme.bodyMedium?.color?.withOpacity(0.6),
+                                  ),
                                 ),
                                 validator: (value) {
                                   if (value == null || value.isEmpty) {
-                                    return 'Please provide at least one photo/video link';
+                                    return Provider.of<LanguageProvider>(context, listen: false).translate('Please provide at least one photo/video link');
                                   }
                                   return null;
                                 },
@@ -421,14 +446,20 @@ class _EnhancedReportScreenState extends State<EnhancedReportScreen>
                             // Report Title
                             TextFormField(
                               controller: _titleController,
-                              decoration: const InputDecoration(
-                                labelText: 'Report Title',
-                                prefixIcon: Icon(Icons.title),
+                              style: TextStyle(color: theme.textTheme.bodyLarge?.color),
+                              decoration: InputDecoration(
+                                labelText: Provider.of<LanguageProvider>(context).translate('Report Title'),
+                                prefixIcon: Icon(
+                                  Icons.title,
+                                  color: theme.iconTheme.color,
+                                ),
                                 hintText: 'e.g., Illegal dumping near park',
+                                labelStyle: TextStyle(color: theme.textTheme.bodyMedium?.color),
+                                hintStyle: TextStyle(color: theme.textTheme.bodyMedium?.color?.withOpacity(0.6)),
                               ),
                               validator: (value) {
                                 if (value == null || value.isEmpty) {
-                                  return 'Please enter a title';
+                                  return Provider.of<LanguageProvider>(context, listen: false).translate('Please enter a title');
                                 }
                                 return null;
                               },
@@ -439,9 +470,15 @@ class _EnhancedReportScreenState extends State<EnhancedReportScreen>
                             // Location with GPS
                             TextFormField(
                               controller: _locationController,
+                              style: TextStyle(color: theme.textTheme.bodyLarge?.color),
                               decoration: InputDecoration(
-                                labelText: 'Location',
-                                prefixIcon: const Icon(Icons.location_on),
+                                labelText: Provider.of<LanguageProvider>(context).translate('Location'),
+                                prefixIcon: Icon(
+                                  Icons.location_on,
+                                  color: theme.iconTheme.color,
+                                ),
+                                labelStyle: TextStyle(color: theme.textTheme.bodyMedium?.color),
+                                hintStyle: TextStyle(color: theme.textTheme.bodyMedium?.color?.withOpacity(0.6)),
                                 suffixIcon: IconButton(
                                   icon: _isGettingLocation
                                       ? const SizedBox(
@@ -449,14 +486,17 @@ class _EnhancedReportScreenState extends State<EnhancedReportScreen>
                                           height: 20,
                                           child: CircularProgressIndicator(strokeWidth: 2),
                                         )
-                                      : const Icon(Icons.my_location),
+                                      : Icon(
+                                          Icons.my_location,
+                                          color: theme.iconTheme.color,
+                                        ),
                                   onPressed: _isGettingLocation ? null : _getCurrentLocation,
                                 ),
                                 hintText: 'Tap GPS icon to get current location',
                               ),
                               validator: (value) {
                                 if (value == null || value.isEmpty) {
-                                  return 'Please enter location';
+                                  return Provider.of<LanguageProvider>(context, listen: false).translate('Please enter location');
                                 }
                                 return null;
                               },
@@ -465,11 +505,12 @@ class _EnhancedReportScreenState extends State<EnhancedReportScreen>
                             const SizedBox(height: 24),
                             
                             // Waste Type Selection
-                            const TranslatedText(
+                            TranslatedText(
                               'Waste Type',
                               style: TextStyle(
                                 fontSize: 16,
                                 fontWeight: FontWeight.w600,
+                                color: theme.textTheme.titleMedium?.color,
                               ),
                             ),
                             const SizedBox(height: 12),
@@ -500,11 +541,11 @@ class _EnhancedReportScreenState extends State<EnhancedReportScreen>
                                               ],
                                             )
                                           : null,
-                                      color: isSelected ? null : Colors.grey[100],
+                                      color: isSelected ? null : theme.cardColor,
                                       border: Border.all(
                                         color: isSelected 
                                             ? data['color']
-                                            : Colors.grey[300]!,
+                                            : theme.dividerColor,
                                         width: 2,
                                       ),
                                       borderRadius: BorderRadius.circular(12),
@@ -528,11 +569,11 @@ class _EnhancedReportScreenState extends State<EnhancedReportScreen>
                                         const SizedBox(width: 8),
                                         Expanded(
                                           child: Text(
-                                            data['label'],
+                                            Provider.of<LanguageProvider>(context).translate(data['label']),
                                             style: TextStyle(
                                               color: isSelected 
                                                   ? Colors.white
-                                                  : Colors.grey[700],
+                                                  : theme.textTheme.bodyMedium?.color,
                                               fontWeight: isSelected 
                                                   ? FontWeight.bold 
                                                   : FontWeight.w500,
@@ -550,11 +591,12 @@ class _EnhancedReportScreenState extends State<EnhancedReportScreen>
                             const SizedBox(height: 24),
                             
                             // Priority Selection
-                            const TranslatedText(
+                            TranslatedText(
                               'Priority Level',
                               style: TextStyle(
                                 fontSize: 16,
                                 fontWeight: FontWeight.w600,
+                                color: theme.textTheme.titleMedium?.color,
                               ),
                             ),
                             const SizedBox(height: 12),
@@ -600,7 +642,7 @@ class _EnhancedReportScreenState extends State<EnhancedReportScreen>
                                                 ],
                                               )
                                             : null,
-                                        color: isSelected ? null : Colors.grey[100],
+                                        color: isSelected ? null : theme.cardColor,
                                         border: Border.all(
                                           color: isSelected ? color : Colors.grey[300]!,
                                           width: 2,
@@ -623,9 +665,9 @@ class _EnhancedReportScreenState extends State<EnhancedReportScreen>
                                           ),
                                           const SizedBox(height: 4),
                                           Text(
-                                            priority.toString().split('.').last.toUpperCase(),
+                                            Provider.of<LanguageProvider>(context).translate(priority.toString().split('.').last),
                                             style: TextStyle(
-                                              color: isSelected ? Colors.white : Colors.grey[600],
+                                              color: isSelected ? Colors.white : theme.textTheme.bodyMedium?.color,
                                               fontWeight: isSelected 
                                                   ? FontWeight.bold 
                                                   : FontWeight.w500,
@@ -646,18 +688,24 @@ class _EnhancedReportScreenState extends State<EnhancedReportScreen>
                             TextFormField(
                               controller: _descriptionController,
                               maxLines: 4,
-                              decoration: const InputDecoration(
-                                labelText: 'Detailed Description',
+                              style: TextStyle(color: theme.textTheme.bodyLarge?.color),
+                              decoration: InputDecoration(
+                                labelText: Provider.of<LanguageProvider>(context).translate('Detailed Description'),
                                 prefixIcon: Padding(
                                   padding: EdgeInsets.only(bottom: 60),
-                                  child: Icon(Icons.description),
+                                  child: Icon(
+                                    Icons.description,
+                                    color: theme.iconTheme.color,
+                                  ),
                                 ),
                                 alignLabelWithHint: true,
                                 hintText: 'Describe the waste issue in detail...',
+                                labelStyle: TextStyle(color: theme.textTheme.bodyMedium?.color),
+                                hintStyle: TextStyle(color: theme.textTheme.bodyMedium?.color?.withOpacity(0.6)),
                               ),
                               validator: (value) {
                                 if (value == null || value.isEmpty) {
-                                  return 'Please provide a description';
+                                  return Provider.of<LanguageProvider>(context, listen: false).translate('Please provide a description');
                                 }
                                 return null;
                               },
@@ -713,6 +761,7 @@ class _EnhancedReportScreenState extends State<EnhancedReportScreen>
                                             style: TextStyle(
                                               fontSize: 16,
                                               fontWeight: FontWeight.bold,
+                                              color: Colors.white,
                                             ),
                                           ),
                                         ],
@@ -724,25 +773,36 @@ class _EnhancedReportScreenState extends State<EnhancedReportScreen>
                             
                             // Help Text
                             Container(
+                              width: double.infinity,
                               padding: const EdgeInsets.all(16),
                               decoration: BoxDecoration(
-                                color: Colors.blue[50],
+                                color: theme.brightness == Brightness.dark 
+                                    ? Colors.blue[900]?.withOpacity(0.2)
+                                    : Colors.blue[50],
                                 borderRadius: BorderRadius.circular(12),
-                                border: Border.all(color: Colors.blue[200]!),
+                                border: Border.all(
+                                  color: theme.brightness == Brightness.dark 
+                                      ? Colors.blue[400]!
+                                      : Colors.blue[200]!,
+                                ),
                               ),
-                              child: const Row(
+                              child: Row(
                                 children: [
                                   Icon(
                                     Icons.info,
-                                    color: Colors.blue,
+                                    color: theme.brightness == Brightness.dark 
+                                        ? Colors.blue[300]
+                                        : Colors.blue[600],
                                     size: 20,
                                   ),
-                                  SizedBox(width: 12),
+                                  const SizedBox(width: 12),
                                   Expanded(
                                     child: TranslatedText(
                                       'Your report helps keep India clean. Include clear photos and accurate location for faster resolution.',
                                       style: TextStyle(
-                                        color: Colors.blue,
+                                        color: theme.brightness == Brightness.dark 
+                                            ? Colors.blue[300]
+                                            : Colors.blue[600],
                                         fontSize: 12,
                                         height: 1.4,
                                       ),
