@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "302937873031",
+    "project_id": "easesih2025",
+    "storage_bucket": "easesih2025.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:302937873031:android:27e830bc62c4252f933622",
+        "android_client_info": {
+          "package_name": "com.example.sih2025"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyApCdUJZ-7SLxiyU7wZv-X9blC3b7xUaFk"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
